@@ -1,6 +1,7 @@
 {% extends "_base/base.html" %}
 {% block content %}
 {% block subsection_title %}Error!{% endblock %}
-{% if object %}
-    {% block subsection_subtitle %}{{object.msg}}{% endblock %}
-{% endif %}
+    {% if message %}
+        {{message}}
+    {%endif%}
+{% endblock %}

@@ -5,14 +5,7 @@ class Config(object):
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     DEBUG = False
     SECRET_KEY = os.environ['SECRET_KEY']
-    DB_NAME = os.environ['DB_NAME']
-    DB_USER = os.environ['DB_USER']
-    DB_PASS = os.environ['DB_PASS']
-    DB_SERVICE = os.environ['DB_SERVICE']
-    DB_PORT = os.environ['DB_PORT']
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
-        DB_USER, DB_PASS, DB_SERVICE, DB_PORT, DB_NAME
-    )
+    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     TROPO_API_KEY_TEXT = os.environ.get('TROPO_API_KEY_TEXT', "TEXT TOKEN NOT PROVIDED")
     TROPO_API_KEY_VOICE = os.environ.get('TROPO_API_KEY_VOICE', "VOICE TOKEN NOT PROVIDED")

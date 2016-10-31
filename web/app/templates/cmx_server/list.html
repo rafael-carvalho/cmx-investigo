@@ -1,4 +1,4 @@
-{% extends "_base/base_list.html" %}
+{% extends "_base/base.html" %}
 {% block title %}Registered CMX Servers{% endblock %}
 {% block style %}{% endblock %}
 {% block scripts %}{% endblock %}
@@ -12,7 +12,22 @@
     {% if object|length > 0%}
         <ol>
         {% for item in object %}
-            <li>{{ item.name }} ({{item.url}}) | <a href="{{url_for('mod_cmx_server.details', server_id=item.id)}}">details</a> | <a href="{{url_for('mod_cmx_server.edit', server_id=item.id)}}">edit</a> | <a href="{{url_for('mod_cmx_server.delete', server_id=item.id)}}">delete</a></li>
+
+
+
+                {% if item.active %}
+                    <li style="color:green">{{ item.name }} ({{item.url}})
+                {% else %}
+                    <li>{{ item.name }} ({{item.url}})
+                {% endif %}
+
+
+                | <a href="{{url_for('mod_cmx_server.details', server_id=item.id)}}">details</a> | <a href="{{url_for('mod_cmx_server.edit', server_id=item.id)}}">edit</a> | <a href="{{url_for('mod_cmx_server.delete', server_id=item.id)}}">delete</a>
+
+
+
+
+            </li>
         {% endfor %}
         </ol>
     {% endif %}

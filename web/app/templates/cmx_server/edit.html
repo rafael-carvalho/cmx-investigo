@@ -15,22 +15,28 @@
         </tr>
         <tr>
             <td>URL: </td>
-            <td><input type="text" name="cmx_server_url" value="{{object.url}}"/></td>
+            <td><input type="text" name="cmx_server_url" value="{{object.url}}" readonly/></td>
         </tr>
         <tr>
             <td>API Username: </td>
-            <td><input type="text" name="cmx_server_username" value="{{object.username}}"/></td>
+            <td><input type="text" name="cmx_server_username" value="{{object.username}}" readonly/></td>
         </tr>
-        <tr>
-            <td>API Password: </td>
-            <td><input type="password" name="cmx_server_password"/></td>
-        </tr>
+
         <tr>
             <td>Externally accessible?</td>
             <td>
                 <select name="cmx_server_externally_accessible">
                     <option value="True" {%if object.externally_accessible %} selected {%endif%}>Yes</option>
                     <option value="False" {%if not object.externally_accessible %} selected {%endif%}>No</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Active</td>
+            <td>
+                <select name="cmx_server_active">
+                    <option value="True">Yes</option>
+                    <option value="False">No</option>
                 </select>
             </td>
         </tr>

@@ -7,8 +7,10 @@ Jinja2==2.7.3
 Mako==1.0.4
 MarkupSafe==0.23
 psycopg2==2.6.1
+python-dateutil
 python-editor==1.0.1
 requests==2.11.1
 requests-cache==0.4.12
 SQLAlchemy==1.1.2
 Werkzeug==0.11.11
+xmltodict

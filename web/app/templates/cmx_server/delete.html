@@ -5,6 +5,7 @@
 {% block subsection_title %}CMX Server{% endblock %}
 {% block subsection_subtitle %}Delete instance{% endblock %}
 {% block content %}
+<p style="color:red;">Are you sure you want to remove?</p>
 <table>
     <tr>
         <td>Name: </td>
@@ -31,14 +32,20 @@
         </td>
     </tr>
     <tr>
+        <td>Active</td>
+        <td>
+            {{object.active}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="{{url_for('mod_cmx_server.edit', server_id=object.id)}}">Edit Server</a>
+        </td>
         <td>
             <form method="POST">
                 <input type="submit" value="Delete"/>
                 <input type="hidden" name="cmx_server_id" value="{{object.id}}"/>
             </form>
-        </td>
-        <td>
-            <a href="{{url_for('mod_cmx_server.edit', server_id=object.id)}}">Edit Server</a>
         </td>
     </tr>
 </table>
