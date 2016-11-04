@@ -9,5 +9,6 @@ mod_error = Blueprint('mod_error', __name__, url_prefix='/error')
 
 
 @mod_error.route('/<message>', methods=['GET'])
+@mod_error.route('/', methods=['GET'])
 def home(message=None):
     return render_template('_base/error.html', message=message)

@@ -123,7 +123,7 @@ def invoke_db_close():
 # Sample HTTP error handling
 @app.errorhandler(404)
 def not_found(error):
-    return redirect(url_for('mod_error.home'))
+    return redirect(url_for('mod_error.home', message=404))
 
 
 @app.teardown_appcontext
