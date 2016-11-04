@@ -1,24 +1,28 @@
 web:
   restart: always
-  build: ./web
+  image: containers.cisco.com/rafacarv/cmx-finder:latest
   expose:
     - "8000"
   links:
     - postgres:postgres
   volumes:
     - /usr/src/app/static
-  env_file: .env
+  #env_file: .env
   command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
 
 nginx:
   restart: always
-  build: ./nginx/
+  #image: tutum/nginx:latest
+  image: containers.cisco.com/rafacarv/nginx:latest
+  #build: ./nginx
   ports:
     - "80:80"
   volumes:
     - /www/static
   volumes_from:
     - web
+  labels:
+    io.rancher.sidekicks: web  
   links:
     - web:web
 
@@ -33,6 +37,7 @@ postgres:
   image: postgres:latest
   volumes_from:
     - data
+  labels:
+    io.rancher.sidekicks: data
   ports:
-    - "3456:5432"
-
+    - "5432:5432"
