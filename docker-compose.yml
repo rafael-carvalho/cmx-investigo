@@ -1,14 +1,14 @@
 web:
   container_name: "cmx-finder-web"
   restart: always
-  #build: ./web
-  image: containers.cisco.com/rafacarv/cmx-finder:latest
+  build: ./web
+  #image: containers.cisco.com/rafacarv/cmx-finder:latest
   expose:
     - "8000"
   links:
     - postgres:postgres
   volumes:
-    - /usr/src/app/static
+    - /usr/src/app/app/static
   #env_file: .env
   command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
   environment:
@@ -23,8 +23,8 @@ web:
 nginx:
   container_name: "cmx-finder-nginx"
   restart: always
-  #build: ./nginx/
-  image: containers.cisco.com/rafacarv/nginx:latest
+  build: ./nginx/
+  #image: containers.cisco.com/rafacarv/nginx:latest
   ports:
     - "80:80"
   volumes:
