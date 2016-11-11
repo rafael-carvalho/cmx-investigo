@@ -1,5 +1,7 @@
 web:
+  container_name: "cmx-finder-web"
   restart: always
+  #build: ./web
   image: containers.cisco.com/rafacarv/cmx-finder:latest
   expose:
     - "8000"
@@ -7,11 +9,21 @@ web:
     - postgres:postgres
   volumes:
     - /usr/src/app/static
-  env_file: .env
+  #env_file: .env
   command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
+  environment:
+    - SECRET_KEY= \x1b\x8bl \xe0\x87\xfe\r\xe7\x18\xce5,\x7f\x0fr\x08!\x03\xbd\xfb\xab\xfc
+    - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
+    - APP_SETTINGS=config.DevelopmentConfig
+    - TROPO_API_KEY_TEXT=55644447634365724c6b525461476265764b466457426d557954477a76666c4c4f6b654952577250787a515a
+    - TROPO_API_KEY_VOICE=5679686d634d44495a486f6d56684a48645564716c454f63554c4d726f4876526d7664626e6d68664972436c
+    - SPARK_TOKEN=OWQzZGE4YTItNDZkMC00MTVkLTk4NzMtNzBkY2RmNDI4MDllZThkYTIyNzItMzI5
+    - ON_CISCO_NETWORK=True
 
 nginx:
+  container_name: "cmx-finder-nginx"
   restart: always
+  #build: ./nginx/
   image: containers.cisco.com/rafacarv/nginx:latest
   ports:
     - "80:80"
@@ -19,10 +31,13 @@ nginx:
     - /www/static
   volumes_from:
     - web
+  labels:
+    io.rancher.sidekicks: web
   links:
     - web:web
 
 data:
+  container_name: "cmx-finder-data"
   restart: always
   image: postgres:latest
   volumes:
@@ -30,9 +45,12 @@ data:
   command: "true"
 
 postgres:
+  container_name: "cmx-finder-db"
   restart: always
   image: postgres:latest
   volumes_from:
     - data
+  labels: 
+    io.rancher.sidekicks: data
   ports:
     - "5432:5432"
