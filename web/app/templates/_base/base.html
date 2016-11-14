@@ -4,10 +4,14 @@
 <head>
 <title>{% block title %}{% endblock %} | CMX Finder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" type="text/css" href="static/css/external/w3.css" />
-<link rel="stylesheet" type="text/css" href="static/css/external/font-awesome.min.css">
-<link rel="stylesheet" type="text/css" href="static/css/base.css" />
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/external/w3.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/external/font-awesome.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/base.css')}}" />
+
+<script src="{{url_for('static', filename='script/external/jquery-3.1.1.min.js')}}"></script>
+<script type="text/javascript" charset="utf-8" src="{{ url_for('static', filename='script/base.js') }}"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+
 <script src="static/script/external/jquery-3.1.1.min.js"></script>
 <script type="text/javascript" charset="utf-8" src="static/script/base.js"></script>
 {% include '_base/favicon.html' %}
