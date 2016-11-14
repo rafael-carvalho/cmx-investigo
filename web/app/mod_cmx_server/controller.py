@@ -88,12 +88,12 @@ def edit(server_id):
         else:
             server.name = request.form["cmx_server_name"]
             server.externally_accessible = request.form["cmx_server_externally_accessible"] == 'True'
-            db_session.commit(server)
+            db_session.commit()
             output = redirect(url_for('mod_cmx_server.show'))
 
-    except:
+    except Exception as e:
         traceback.print_exc()
-        output = redirect(url_for('error'))
+        output = redirect(url_for('mod_error.home', message=str(e)))
         db_session.rollback()
     return output
 
@@ -160,7 +160,7 @@ def validate_cmx_server(cmx_server):
             filename = 'CENU.json'
 
         if filename:
-            filename = 'static/server_config/{}'.format(filename)
+            filename = os.path.join(app.static_folder, 'server_config/{}'.format(filename))
 
             with open(filename) as data_file:
                 server_info = json.load(data_file)

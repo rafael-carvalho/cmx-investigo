@@ -7,7 +7,8 @@
 </style>
 {% endblock%}
 {% block scripts %}
-<script type="text/javascript" charset="utf-8" src="static/script/plot_asset_over_map.js"></script>
+<script type="text/javascript" charset="utf-8" src="{{url_for('static', filename='script/plot_asset_over_map.js')}}"></script>
+
 
 <script type="text/javascript" charset="utf-8">
 var msg = {{ data|tojson|safe}}
@@ -104,7 +105,7 @@ $(document).ready(function() {
             <span id="countdown"></span>
         </div>
         <div class='w3-left hidden'  id="loading" style="display:none">
-            <img src="static/img/loading.gif" style="max-width:10%"/>
+            <img src="{{url_for('static', filename='img/loading.gif')}}" style="max-width:10%"/>
         </div>
         <form>
             <input type="submit" value="Start" id="timerTrigger" />

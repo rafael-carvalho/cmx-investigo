@@ -10,7 +10,8 @@ from externalapis.CMXAPICaller import CMXAPICaller
 from externalapis.SparkAPICaller import SparkAPICaller
 from externalapis.TropoAPICaller import TropoAPICaller
 
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__)
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))   # refers to application_top
 
 # Configurations
 app.config.from_object(os.environ['APP_SETTINGS'])

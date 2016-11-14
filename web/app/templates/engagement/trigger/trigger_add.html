@@ -93,7 +93,8 @@ $(document).ready(function(){
                     <td colspan="2" class="table-header">Actions</td>
                 </tr>
                 <tr class="table-header">
-                    <td colspan="2"><img src="static/img/spark.png" alt="spark" style="max-height: 50px;"/></td>
+                    <td colspan="2"><img src="{{url_for('static', filename='img/spark.png')}}" alt="spark" style="max-height: 50px;"/></td>
+
                 </tr>
                 <tr>
                     <td class="form-field-name">Post on Spark</td>
@@ -114,7 +115,7 @@ $(document).ready(function(){
                     </td>
                 </tr>
                 <tr class="table-header">
-                    <td colspan="2"><img src="static/img/tropo.png" alt="tropo" style="max-height: 50px; max-width: 50px;"/></td>
+                    <td colspan="2"><img src="{{url_for('static', filename='img/tropo.png')}}" alt="tropo" style="max-height: 50px; max-width: 50px;"/></td>
                 </tr>
                 <tr>
                     <td class="form-field-name">Engage with Tropo</td>

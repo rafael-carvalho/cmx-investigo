@@ -12,7 +12,7 @@ web:
   #env_file: .env
   command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
   environment:
-    - SECRET_KEY= \x1b\x8bl \xe0\x87\xfe\r\xe7\x18\xce5,\x7f\x0fr\x08!\x03\xbd\xfb\xab\xfc
+    - SECRET_KEY= b9gSjNgPyl6WLGdTrV0j
     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
     - APP_SETTINGS=config.DevelopmentConfig
     - TROPO_API_KEY_TEXT=55644447634365724c6b525461476265764b466457426d557954477a76666c4c4f6b654952577250787a515a
@@ -36,14 +36,6 @@ nginx:
   links:
     - web:web
 
-#data:
-#  container_name: "cmx-finder-data"
-#  restart: always
-#  image: postgres:latest
-#  volumes:
-#    - /var/lib/postgresql
-#  command: "true"
-
 postgres:
   container_name: "cmx-finder-db"
   restart: always
@@ -53,4 +45,4 @@ postgres:
 #  labels: 
 #    io.rancher.sidekicks: data
   ports:
-    - "5432:5432"
+    - "2345:5432"
