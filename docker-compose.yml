@@ -1,4 +1,3 @@
-
 web:
   container_name: "cmx-finder-web"
   restart: always
