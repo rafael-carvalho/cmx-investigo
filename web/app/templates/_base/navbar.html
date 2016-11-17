@@ -6,7 +6,14 @@
     <li><a href="{{url_for('index')}}" class="w3-hover-none w3-hover-text-grey w3-padding-large">HOME</a></li>
     <li class="w3-hide-small"><a href="{{url_for('mod_monitor.overview')}}" class="w3-padding-large">OVERVIEW</a></li>
     <li class="w3-hide-small"><a href="{{url_for('mod_monitor.device_select')}}" class="w3-padding-large">DEVICE</a></li>
-    <li class="w3-hide-small"><a href="{{url_for('mod_engagement.home')}}" class="w3-padding-large">ENGAGEMENT</a></li>
+    <li class="w3-hide-small w3-dropdown-hover">
+    <a href="javascript:void(0)" class="w3-hover-none w3-padding-large" title="More">ENGAGEMENT <i class="fa fa-caret-down"></i></a>
+    <div class="w3-dropdown-content w3-white w3-card-4">
+      <a href="{{url_for('mod_engagement.engagement_screen_select')}}">SCREEN</a>
+      <a href="{{url_for('mod_engagement.engagement_trigger_add')}}">TRIGGER</a>
+    </div>
+  </li>
+
     <li class="w3-hide-small"><a href="{{url_for('mod_user.show')}}" class=" w3-padding-large">USERS</a></li>
     <li class="w3-hide-small"><a href="{{url_for('mod_simulation.add')}}" class=" w3-padding-large">SIMULATION</a></li>
     <li class="w3-hide-small"><a href="{{url_for('mod_cmx_server.show')}}" class=" w3-padding-large">SETTINGS</a></li>

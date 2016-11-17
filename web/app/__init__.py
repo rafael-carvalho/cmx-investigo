@@ -89,7 +89,6 @@ def before_first_request():
         if str(e).__contains__("does not exist"):
             # DB Tables have not been created
             invoke_db_migration()
-
         else:
             # Unknown error
             raise Exception(e)
@@ -136,5 +135,5 @@ def shutdown_session(exception=None):
 
 
 if __name__ == '__main__':
-    #app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
-    app.run()
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    #app.run()

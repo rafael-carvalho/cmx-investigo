@@ -2,7 +2,7 @@ web:
   container_name: "cmx-finder-web"
   restart: always
   build: ./web
-  #image: containers.cisco.com/rafacarv/cmx-finder:latest
+  #image: containers.cisco.com/rafacarv/cmx-finder:master
   expose:
     - "8000"
   links:
@@ -24,7 +24,7 @@ nginx:
   container_name: "cmx-finder-nginx"
   restart: always
   build: ./nginx/
-  #image: containers.cisco.com/rafacarv/nginx:latest
+  #image: containers.cisco.com/rafacarv/nginx:master
   ports:
     - "80:80"
   volumes:

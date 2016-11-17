@@ -8,7 +8,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from config import Config
 
-db_engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, convert_unicode=True)#, echo=True)
+db_engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, convert_unicode=True, pool_size=20, max_overflow=0)#, echo=True)
 
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=True,
@@ -93,9 +93,17 @@ def close_db():
     except:
         traceback.print_exc()
         print ("Error commiting db_session")
+        try:
+            db_session.rollback()
+            db_session.flush()  # for resetting non-commited .add()
+        except:
+            traceback.print_exc()
+            print ("Error rolling back db_session")
 
     try:
         db_session.remove()
     except:
         traceback.print_exc()
         print ("Error removing the db_session")
+
+

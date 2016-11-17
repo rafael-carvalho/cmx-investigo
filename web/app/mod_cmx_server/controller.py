@@ -125,6 +125,8 @@ def elect_active_server(active_server_id=None):
 
 def download_floor_images(api):
     output = True
+    zones = db_session.query(Zone).all()
+    print (zones)
     floors = db_session.query(Floor).all()
     print ('Downloading images from {} floors'.format(len(floors)))
     for floor in floors:

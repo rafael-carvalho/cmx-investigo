@@ -3,16 +3,15 @@ import json
 from flask import Blueprint, render_template, redirect, request, url_for
 
 from app.mod_api import controller as api_module
-from app import get_controller, get_api_cmx
+from app import get_controller
 
 mod_monitor = Blueprint('mod_monitor', __name__, url_prefix='/monitor')
 
 
 @mod_monitor.route('/overview/')
 def overview():
-    data = {'error': None,
-            'items': None
-            }
+    data = get_controller().get_hierarchies_serialized()
+    #print (json.dumps(data, indent=2))
     return render_template('monitor/show/overview_show.html', data=data)
 
 
@@ -50,7 +49,7 @@ def device_show(mac):
 def hierarchy_select():
     if request.method == 'GET':
         ctrl = get_controller()
-        data = ctrl.get_hierarchies()
+        data = ctrl.get_hierarchies_serialized()
         output = render_template('monitor/select/device_select.html', data=map(json.dumps, data))
     else:
         hierarchy = request.form["hierarchy"]

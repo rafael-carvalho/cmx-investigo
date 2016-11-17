@@ -162,7 +162,7 @@ def get_devices_divided_by_hierarchy(use_asynchronous_data=True):
 
     for i in items['unknown_devices']:
         current_hierarchy = __filter_hierarchy(i['location']['hierarchy'], hierarchies, current_hierarchy)
-        current_hierarchy['registered_users'].append(i)
+        current_hierarchy['unknown_devices'].append(i)
 
     return hierarchies
 

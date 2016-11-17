@@ -40,7 +40,11 @@ class CMXServer(Base):
     def get_hierarchies(self):
         return self.cmx_system.campuses
 
-
+    def get_hierarchies_serialized(self):
+        campuses = []
+        for c in self.cmx_system.campuses:
+            campuses.append(c.serialize())
+        return campuses
 
 class CMXSystem(Base):
     __tablename__ = 'cmx_system'
@@ -60,6 +64,16 @@ class CMXSystem(Base):
             for b in c.buildings:
                 floors.append(b.floors)
 
+    def serialize(self):
+        campuses = []
+        for c in self.buildings:
+            campuses.append(c.serialize())
+        item = {
+            'id': self.id,
+            'name': self.name,
+            'campuses': campuses
+        }
+        return item
 
 class Campus(Base):
     __tablename__ = "campus"
@@ -80,6 +94,18 @@ class Campus(Base):
 
     def get_hierarchy(self):
         return self.name
+
+    def serialize(self):
+        buildings = []
+        for b in self.buildings:
+            buildings.append(b.serialize())
+        item = {
+            'aes_uid': self.aes_uid,
+            'name': self.name,
+            'cmx_system_id': self.cmx_system_id,
+            'buildings': buildings
+        }
+        return item
 
 
 class Building(Base):
@@ -105,6 +131,19 @@ class Building(Base):
     def get_hierarchy(self):
         return "{}>{}".format(self.campus.get_hierarchy(), self.name)
 
+    def serialize(self):
+        floors = []
+        for f in self.floors:
+            floors.append(f.serialize())
+        item = {
+            'aes_uid': self.aes_uid,
+            'object_version': self.object_version,
+            'name': self.name,
+            'campus_id': self.campus_id,
+            'floors': floors
+        }
+        return item
+
 
 class Floor(Base):
     __tablename__ = "floor"
@@ -113,7 +152,7 @@ class Floor(Base):
     aes_uid = Column(BigInteger, primary_key=True, unique=True)
     calibration_model_id = Column(BigInteger)
     object_version = Column(Integer, default=0)
-    name = Column(String, unique=True)
+    name = Column(String)
 
     # dimension
     floor_length = Column(Numeric)
@@ -167,13 +206,41 @@ class Floor(Base):
     def get_hierarchy(self):
         return "{}>{}".format(self.building.get_hierarchy(), self.name)
 
+    def serialize(self):
+        zones = []
+        for z in self.zones:
+            zones.append(z.serialize())
+        item = {
+            'aes_uid': self.aes_uid,
+            'building_id': self.building_id,
+            'calibration_model_id': self.calibration_model_id,
+            'object_version': self.object_version,
+            'name': self.name,
+            'floor_length': float(self.floor_length),
+            'floor_width': float(self.floor_width),
+            'floor_height': float(self.floor_height),
+            'floor_offset_x': float(self.floor_offset_x),
+            'floor_offset_y': float(self.floor_offset_y),
+            'floor_unit': self.floor_unit,
+            'image_name': self.image_name,
+            'image_zoom_level': float(self.image_zoom_level),
+            'image_width': float(self.image_width),
+            'image_height': float(self.image_height),
+            'image_size': float(self.image_size),
+            'image_max_resolution': float(self.image_max_resolution),
+            'image_color_depth': float(self.image_color_depth),
+            'map_path': self.map_path,
+            'zones': zones
+        }
+        return item
+
 
 class Zone(Base):
     __tablename__ = "zone"
     floor_id = Column(BigInteger, ForeignKey('floor.aes_uid', ondelete='cascade'))
     floor = relationship("Floor", back_populates="zones")
     id = Column(Integer, primary_key=True, unique=True)
-    name = Column(String, unique=True)
+    name = Column(String)
     zone_type = Column(String, default="ZONE")
 
     def __init__(self, floor_id, name, zone_type):
@@ -186,6 +253,16 @@ class Zone(Base):
 
     def get_hierarchy(self):
         return "{}>{}".format(self.floor.get_hierarchy(), self.name)
+
+    def serialize(self):
+        item = {
+            'id': self.id,
+            'floor_id': self.floor_id,
+            'name': self.name,
+            'zone_type': self.zone_type
+        }
+        return item
+
 
 
 class DeviceLocation(Base):
