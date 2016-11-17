@@ -1,17 +1,101 @@
-{% extends "monitor/monitor_base.html" %}
-{% block update_screen %}
-function makeRequest() {
+{% extends "_base/base.html" %}
+{% block title %}Device Monitoring{% endblock %}
+{% block scripts %}
+<script type="text/javascript" charset="utf-8" src="{{url_for('static', filename='script/plot_asset_over_map.js')}}"></script>
+
+<script>
+    $(document).ready(function() {
+
+    var pathArray = window.location.pathname.split( '/' );
+var namespace = unescape(pathArray[pathArray.length - 1])
+
+    var expirationWhenIdle = 5;
+    var expirationWhenEngaging = 10;
+
+    var expiration = expirationWhenIdle; //seconds
+
+    var time = expiration;
+
+    var IntID;
+    function startTimer() {
+        i = setInterval( function() {
+
+            time--;
+            if (time === 0) {
+                makeRequest();
+                time = expiration
+            }
+            updateTimer(time);
+        }, 1000);
+        return i;
+    }
+
+    function stopTimer() {
+        clearInterval(IntID);
+    }
+
+    function updateTimer(time) {
+        $('#countdown').html(time);
+    }
+    updateTimer(time)
+    $("form").submit(function( event ) {
+          event.preventDefault();
+          var btn = $('#timerTrigger');
+          var btnVal = btn.val()
+
+          var newVal;
+          if (btnVal === 'Stop') {
+            newVal = 'Start';
+            stopTimer();
+
+          } else {
+            newVal = 'Stop';
+            IntID = startTimer();
+          }
+          btn.val(newVal);
+          $('#countdownContainer').toggle();
+
+    });
+
+    function showLoading() {
+        //$('#loading').show();
+    }
+
+    function hideLoading(){
+        //$('#loading').hide();
+    }
+
+
+    $('#timerTrigger').click();
+
+    $(document).on('click', '.slideTrigger', function(){
+        var div = $(this).parent().parent().find(".hierarchy-container");
+        var text;
+        if (!$(div).hasClass("hidden")) {
+            //$(div).hide();
+            $(div).addClass("hidden");
+            text = "(view details)"
+        } else {
+            //$(div).show();
+            $(div).removeClass("hidden");
+            text = "(hide details)"
+        }
+        $(this).text(text);
+    });
+
+
+    function makeRequest() {
     $.ajax({
         type: "GET",
         url: "{{url_for('mod_api.client', mac_address=mac_address)}}",
         data: {},
         beforeSend: function() {
-            stopTimer();
+            //stopTimer();
         },
         success: function(msg) {
             time = expiration;
             updateScreen(msg);
-            hideErrorMessage();
+            //hideErrorMessage();
 
         },
         fail: function(msg) {
@@ -29,7 +113,7 @@ function updateScreen(msg) {
         showErrorMessage(msg.error);
 
     } else {
-        hideErrorMessage();
+        //hideErrorMessage();
         var name = null;
         var item;
         var location;
@@ -74,12 +158,27 @@ function updateScreen(msg) {
 
     }
 }
+
+});
+
+</script>
+
 {% endblock %}
 {% block content %}
-    <span id="last_updated"></span>
-    <div class="w3-left" id="data" style="display:none;">
-	{{data}}
+<div class="w3-container w3-right">
+    <div class='w3-left hidden' id="countdownContainer">
+        <span>Reloading in ...</span>
+        <span id="countdown"></span>
     </div>
+    <div class='w3-left hidden'  id="loading" style="display:none">
+        <img src="{{url_for('static', filename='img/loading.gif')}}" style="max-width:10%"/>
+    </div>
+    <form>
+        <input type="submit" value="Start" id="timerTrigger" />
+    </form>
+    <p style="color:red" class="hidden" id="error">Error!</p>
+</div>
+    <span id="last_updated"></span>
     <div class="w3-left">
         <table>
             <tbody>
@@ -113,6 +212,6 @@ function updateScreen(msg) {
                 </tr>
             </tbody>
         </table>
-        <canvas class="show-when-present" id="map-canvas" style="width: 600px; height:400px;">Your browser does not support the canvas HTML5 element.</canvas>
+        <canvas class="show-when-present" id="map-canvas" style="widht:100%; min-width: 600px; height:400px;">Your browser does not support the canvas HTML5 element.</canvas>
         </div>
 {% endblock %}

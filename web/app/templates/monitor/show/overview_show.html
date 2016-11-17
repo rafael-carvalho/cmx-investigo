@@ -187,17 +187,12 @@ $(document).ready(function() {
           for (var i = 0; i < hierarchies.length; i++) {
             var h = hierarchies[i];
             var id = $(this).attr('id');
-            var name = h.name;
-            console.log(name);
-            name = name.replaceAll(' ', '').replaceAll('!', '').replaceAll('>', '_');
-            console.log(name);
-
+            var name = h.name.replaceAll(' ', '').replaceAll('!', '').replaceAll('>', '_');
             if (name === id) {
                 hierarchy = h;
                 break;
             }
            }
-           console.log(hierarchy);
           var registered_users_count = 0;
           var unknown_devices_count = 0;
           if (hierarchy != null) {

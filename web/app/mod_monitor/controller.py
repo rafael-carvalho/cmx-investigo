@@ -50,7 +50,7 @@ def hierarchy_select():
     if request.method == 'GET':
         ctrl = get_controller()
         data = ctrl.get_hierarchies_serialized()
-        output = render_template('monitor/select/device_select.html', data=map(json.dumps, data))
+        output = render_template('monitor/select/hierarchy_select.html', data=map(json.dumps, data))
     else:
         hierarchy = request.form["hierarchy"]
         url = url_for('.hierarchy_show', hierarchy=hierarchy)
