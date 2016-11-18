@@ -187,7 +187,7 @@ $(document).ready(function() {
           for (var i = 0; i < hierarchies.length; i++) {
             var h = hierarchies[i];
             var id = $(this).attr('id');
-            var name = h.name.replaceAll(' ', '').replaceAll('!', '').replaceAll('>', '_');
+            var name = h.name.replaceAll('!', '').replaceAll('>', '_').replaceAll(' ', '}');
             if (name === id) {
                 hierarchy = h;
                 break;
@@ -281,7 +281,7 @@ $(document).ready(function() {
                             {% for zone in floor.zones %}
                                 {% set id = campus.name~'_'~building.name~'_'~floor.name~'_'~zone.name %}
                                 {% set id = id | replace ('!', '') %}
-                                {% set id = id | replace (' ', '') %}
+                                {% set id = id | replace (' ', '}') %}
                                 <div id="{{id}}" class="w3-container zone shadow1 red">
                                     <div>
                                         <h4 class="zone_name">{{zone.name}}</h4>

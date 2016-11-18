@@ -7,7 +7,7 @@ Created on Jul 27, 2016
 #https://realpython.com/blog/python/flask-by-example-part-2-postgres-sqlalchemy-and-alembic/
 
 from sqlalchemy import Column, Integer, String, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Numeric, DateTime, BigInteger
 
@@ -242,6 +242,8 @@ class Zone(Base):
     id = Column(Integer, primary_key=True, unique=True)
     name = Column(String)
     zone_type = Column(String, default="ZONE")
+    verticalization_id = Column(Integer, ForeignKey('verticalization.id'))
+    verticalization = relationship("Verticalization", backref=backref("zone", uselist=False))
 
     def __init__(self, floor_id, name, zone_type):
         self.floor_id = floor_id
@@ -259,10 +261,36 @@ class Zone(Base):
             'id': self.id,
             'floor_id': self.floor_id,
             'name': self.name,
-            'zone_type': self.zone_type
+            'zone_type': self.zone_type,
+            'verticalization': self.serialize_verticalization()
         }
         return item
 
+    def serialize_verticalization(self):
+        output = None
+        if self.verticalization:
+            output = self.verticalization.serialize()
+        return output
+
+
+class Verticalization (Base):
+    __tablename__ = "verticalization"
+    id = Column(Integer, primary_key=True, unique=True)
+    vertical_name = Column(String, nullable=True)
+    max_occupation = Column(Integer, default=-1)
+
+    def __init__(self, vertical_name, max_occupation, zone_id):
+        self.vertical_name = vertical_name
+        self.max_occupation = max_occupation
+        self.zone_id = zone_id
+
+    def serialize(self):
+        item = {
+            'id': self.id,
+            'vertical_name': self.vertical_name,
+            'max_occupation': self.max_occupation,
+        }
+        return item
 
 
 class DeviceLocation(Base):
@@ -369,12 +397,3 @@ class EngagementTrigger (Base):
         }
         return item
 
-"""
-
-class EngagementTrigger(Base):
-    __tablename__ = "engagement_trigger"
-    id = Column(Integer, primary_key=True, unique=True)
-    mac_address = Column(String, nullable=False)
-    hierarchy = Column(String, nullable=False)
-
-"""

@@ -98,6 +98,25 @@ def edit(server_id):
     return output
 
 
+@mod_cmx_server.route('/verticalization/<server_id>', methods=['GET', 'POST'])
+def verticalization(server_id):
+    output = None
+    try:
+        server = db_session.query(CMXServer).filter(CMXServer.id == server_id).first()
+        server.name = request.form["cmx_server_name"]
+        server.externally_accessible = request.form["cmx_server_externally_accessible"] == 'True'
+        db_session.commit()
+        output = redirect(url_for('mod_cmx_server.show'))
+
+    except Exception as e:
+        traceback.print_exc()
+        output = redirect(url_for('mod_error.home', message=str(e)))
+        db_session.rollback()
+    return output
+
+
+
+
 @mod_cmx_server.route('/delete/<server_id>', methods=['GET', 'POST'])
 def delete(server_id):
     output = None

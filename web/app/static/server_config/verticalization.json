@@ -1,0 +1,95 @@
+[
+  {
+    "vertical": "retail",
+    "languages": [
+      "English",
+      "Portuguese"
+    ],
+    "items": [
+      {
+        "language": "Portuguese",
+        "name": "Varejo",
+        "vertical_names": [
+          "Anfiteatro",
+          "Estoque",
+          "Televisores",
+          "Computadores",
+          "Sala de estar",
+          "Portateis",
+          "Setor promocional",
+          "Caixas",
+          "Novidades",
+          "Gerencia",
+          "Lanchonete",
+          "Banheiros"
+        ]
+      },
+      {
+        "language": "English",
+        "name": "Retail",
+        "vertical_names": [
+          "Amphitheater",
+          "Stock",
+          "TVs",
+          "Computers",
+          "Living room",
+          "Portables",
+          "Promotions",
+          "Checkout",
+          "New arrivals",
+          "Management",
+          "Food court",
+          "Bathrooms"
+        ]
+      }
+    ]
+  },
+  {
+    "vertical": "healthcare",
+    "languages": [
+      "Portuguese",
+      "English"
+    ],
+    "items": [
+      {
+        "language": "Portuguese",
+        "name": "Saude",
+        "vertical_names": [
+          "Anfiteatro",
+          "Endoscopia",
+          "Centro de queimados",
+          "Geriatria",
+          "UTI",
+          "Fisioterapia",
+          "Neonatal",
+          "Psiquiatria",
+          "Pediatria",
+          "Farmacia",
+          "Lanchonete",
+          "Deposito",
+          "Banheiros"
+        ]
+      },
+      {
+        "language": "English",
+        "name": "Retail",
+        "vertical_names": [
+          "Amphitheater",
+          "Endoscopy",
+          "Burn center",
+          "Geriatric",
+          "Intensive care unit",
+          "Physical therapy",
+          "Operating room",
+          "Neonatal",
+          "Psychiatric",
+          "Pediatric",
+          "Pharmacy",
+          "Food court",
+          "Warehouse",
+          "Restrooms"
+        ]
+      }
+    ]
+  }
+]
