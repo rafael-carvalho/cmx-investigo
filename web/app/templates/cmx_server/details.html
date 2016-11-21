@@ -71,7 +71,7 @@
                                     {% set max_occupancy = 'N/A' %}
                                     {% if zone.verticalization %}
                                         {% set vertical_name = zone.verticalization.vertical_name %}
-                                        {% set max_occupancy = zone.verticalization.max_occupancy %}
+                                        {% set max_occupancy = zone.verticalization.max_occupation %}
                                     {% endif %}
                                     <td>{{vertical_name}}</td>
                                     <td>{{max_occupancy}}</td>

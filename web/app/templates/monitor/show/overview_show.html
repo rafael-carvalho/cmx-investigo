@@ -200,17 +200,24 @@ $(document).ready(function() {
               unknown_devices_count = hierarchy.unknown_devices.length;
           }
           var device_count = $($(this).find('.device_count').get(0));
-          console.log(device_count);
+          //console.log(device_count);
           device_count.text(unknown_devices_count);
           var user_count = $($(this).find('.user_count').get(0));
           user_count.text(registered_users_count);
 
+            var sum = unknown_devices_count + registered_users_count;
+
+        var limit = $($(this).find('.limit').get(0)).text();
+
           var status;
-          if (Math.random() >= 0.5) {
+
+          if (sum > limit) {
+            status = 'red';
+          } else if (sum > limit * 0.5) {
+            status = 'yellow';
+          } else {
             status = 'green';
-            } else {
-              status = 'red';
-            }
+          }
 
           changeOccupancyStatus($(this), status)
 
@@ -284,7 +291,15 @@ $(document).ready(function() {
                                 {% set id = id | replace (' ', '}') %}
                                 <div id="{{id}}" class="w3-container zone shadow1 red">
                                     <div>
-                                        <h4 class="zone_name">{{zone.name}}</h4>
+                                        {% set vertical_name = 'N/A' %}
+                                        {% set max_occupancy = 'N/A' %}
+                                        {% if zone.verticalization %}
+                                            {% set vertical_name = zone.verticalization.vertical_name %}
+                                            {% set max_occupancy = zone.verticalization.max_occupation %}
+                                            <h4 class="zone_name">{{vertical_name}}</h4>
+                                        {% else %}
+                                            <h4 class="zone_name">{{zone.name}}</h4>
+                                        {% endif %}
                                         <table>
                                             <tr>
                                                 <td>Devices</td>
@@ -296,7 +311,7 @@ $(document).ready(function() {
                                             </tr>
                                             <tr>
                                                 <td>Limit</td>
-                                                <td class="limit">0</td>
+                                                <td class="limit">{{max_occupancy}}</td>
                                             </tr>
                                         </table>
                                         <a class="more_info_link w3-right" href="">Details</a>

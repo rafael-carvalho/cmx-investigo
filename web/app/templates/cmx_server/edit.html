@@ -86,11 +86,11 @@ function getVerticalsValues(vertical, language) {
             });
         } else  {
          var url = null;
-         if (form_id = 'server_info') {
+         if (form_id == 'server_info') {
             url = '{{url_for('mod_cmx_server.add')}}';
-         } else {
+         } else if (form_id == 'verticalization_form') {
             url = 'none';
-            alert('//TODO');
+            url = '{{url_for("mod_cmx_server.verticalization_add", server_id = object.id)}}';
         }
         $.ajax({
             type: 'POST',
@@ -206,7 +206,7 @@ function getVerticalsValues(vertical, language) {
                                 {% set max_occupancy = '' %}
                                 {% if zone.verticalization %}
                                     {% set vertical_name = zone.verticalization.vertical_name %}
-                                    {% set max_occupancy = zone.verticalization.max_occupancy %}
+                                    {% set max_occupancy = zone.verticalization.max_occupation %}
                                 {% endif %}
                                 <td><input name="{{id}}_vertical" type="text" value="{{vertical_name}}" class="vertical_name"/> </td>
                                 <td><input name="{{id}}_occupancy" type="text" value="{{max_occupancy}}" class="occupancy" /> </td>

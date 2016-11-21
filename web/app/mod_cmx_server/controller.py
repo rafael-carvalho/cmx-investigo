@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, url_for, redirect, Respon
 from app import app
 from app.database import db_session
 from app import get_api_cmx
-from app.models import CMXServer, Campus, Building, Floor, Zone, CMXSystem
+from app.models import CMXServer, Campus, Building, Floor, Zone, CMXSystem, Verticalization
 
 mod_cmx_server = Blueprint('mod_cmx_server', __name__, url_prefix='/cmx_server')
 
@@ -98,23 +98,40 @@ def edit(server_id):
     return output
 
 
-@mod_cmx_server.route('/verticalization/<server_id>', methods=['GET', 'POST'])
-def verticalization(server_id):
-    output = None
+@mod_cmx_server.route('/verticalization/add/<server_id>', methods=['POST'])
+def verticalization_add(server_id):
+    output = {
+        'error': None,
+        'error_message': None,
+        'redirect_url': None,
+    }
     try:
-        server = db_session.query(CMXServer).filter(CMXServer.id == server_id).first()
-        server.name = request.form["cmx_server_name"]
-        server.externally_accessible = request.form["cmx_server_externally_accessible"] == 'True'
+
+        #print(json.dumps(request.json, indent=2))
+        db_session.query(Verticalization).delete()
+
+        form_json = request.json
+        zones = db_session.query(Zone).all()
+        for zone in zones:
+            key_occupancy = '{}_occupancy'.format(zone.id)
+            key_vertical = '{}_vertical'.format(zone.id)
+            if key_occupancy in form_json and key_vertical in form_json:
+                vertical_name = form_json[key_vertical]
+                max_occupation = form_json[key_occupancy]
+                verticalization = Verticalization(vertical_name, max_occupation, zone.id)
+                db_session.add(verticalization)
+            else:
+                raise Exception('Missing information for {}'.format(zone.name))
+
         db_session.commit()
-        output = redirect(url_for('mod_cmx_server.show'))
-
+        output['redirect_url'] = url_for('mod_cmx_server.details', server_id=server_id)
     except Exception as e:
-        traceback.print_exc()
-        output = redirect(url_for('mod_error.home', message=str(e)))
+        output['error'] = True
+        output['error_message'] = str(e)
         db_session.rollback()
+
+    output = Response(json.dumps(output), mimetype='application/json')
     return output
-
-
 
 
 @mod_cmx_server.route('/delete/<server_id>', methods=['GET', 'POST'])

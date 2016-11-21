@@ -242,8 +242,7 @@ class Zone(Base):
     id = Column(Integer, primary_key=True, unique=True)
     name = Column(String)
     zone_type = Column(String, default="ZONE")
-    verticalization_id = Column(Integer, ForeignKey('verticalization.id'))
-    verticalization = relationship("Verticalization", backref=backref("zone", uselist=False))
+    verticalization = relationship("Verticalization", uselist=False, back_populates="zone")
 
     def __init__(self, floor_id, name, zone_type):
         self.floor_id = floor_id
@@ -278,6 +277,8 @@ class Verticalization (Base):
     id = Column(Integer, primary_key=True, unique=True)
     vertical_name = Column(String, nullable=True)
     max_occupation = Column(Integer, default=-1)
+    zone_id = Column(Integer, ForeignKey('zone.id', ondelete='cascade'))
+    zone = relationship("Zone", back_populates="verticalization")
 
     def __init__(self, vertical_name, max_occupation, zone_id):
         self.vertical_name = vertical_name
