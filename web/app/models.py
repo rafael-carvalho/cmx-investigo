@@ -242,7 +242,7 @@ class Zone(Base):
     id = Column(Integer, primary_key=True, unique=True)
     name = Column(String)
     zone_type = Column(String, default="ZONE")
-    verticalization = relationship("Verticalization", uselist=False, back_populates="zone")
+    verticalization = relationship("Verticalization", uselist=False, cascade="all, delete-orphan", back_populates="zone")
 
     def __init__(self, floor_id, name, zone_type):
         self.floor_id = floor_id
@@ -397,4 +397,3 @@ class EngagementTrigger (Base):
             'extras': self.extras
         }
         return item
-

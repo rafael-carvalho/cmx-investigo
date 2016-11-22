@@ -188,6 +188,7 @@ $(document).ready(function() {
             var h = hierarchies[i];
             var id = $(this).attr('id');
             var name = h.name.replaceAll('!', '').replaceAll('>', '_').replaceAll(' ', '}');
+            console.log(name);
             if (name === id) {
                 hierarchy = h;
                 break;
@@ -289,7 +290,7 @@ $(document).ready(function() {
                                 {% set id = campus.name~'_'~building.name~'_'~floor.name~'_'~zone.name %}
                                 {% set id = id | replace ('!', '') %}
                                 {% set id = id | replace (' ', '}') %}
-                                <div id="{{id}}" class="w3-container zone shadow1 red">
+                                <div id="{{id}}" class="w3-container zone shadow1 green">
                                     <div>
                                         {% set vertical_name = 'N/A' %}
                                         {% set max_occupancy = 'N/A' %}
@@ -314,7 +315,7 @@ $(document).ready(function() {
                                                 <td class="limit">{{max_occupancy}}</td>
                                             </tr>
                                         </table>
-                                        <a class="more_info_link w3-right" href="">Details</a>
+                                        <a class="more_info_link w3-right" href="{{url_for('mod_monitor.hierarchy_show', hierarchy=campus.name~'>'~building.name~'>'~floor.name~'>'~zone.name)}}">Details</a>
                                     </div>
                                 </div>
                             {% endfor %}

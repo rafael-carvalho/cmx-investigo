@@ -29,7 +29,8 @@ def device_select():
 
 
 @mod_monitor.route('/device/<mac>')
-def device_show(mac):
+@mod_monitor.route('/device')
+def device_show(mac=None):
     data = {'error': None,
             'items': None
             }
@@ -50,7 +51,8 @@ def hierarchy_select():
     if request.method == 'GET':
         ctrl = get_controller()
         data = ctrl.get_hierarchies_serialized()
-        output = render_template('monitor/select/hierarchy_select.html', data=map(json.dumps, data))
+        #print(json.dumps(data, indent=2))
+        output = render_template('monitor/select/hierarchy_select.html', data=data)
     else:
         hierarchy = request.form["hierarchy"]
         url = url_for('.hierarchy_show', hierarchy=hierarchy)
@@ -61,6 +63,5 @@ def hierarchy_select():
 
 @mod_monitor.route('/hierarchy/<hierarchy>')
 def hierarchy_show(hierarchy):
-    data = api_module.get_devices_and_users(hierarchy=hierarchy, order_by=('location', 'last_modified', 'DESC'))
-    output = render_template('monitor/show/device_show.html', data=map(json.dumps, data))
+    output = render_template('monitor/show/hierarchy_show.html', hierarchy=hierarchy)
     return output

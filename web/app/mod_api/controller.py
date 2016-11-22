@@ -12,11 +12,11 @@ expiration_time = 5  # 5 seconds
 
 
 @mod_api.route('/hierarchy/<hierarchy>')
-def clients_hierarchy(hierarchy):
+@mod_api.route('/hierarchy')
+def clients_hierarchy(hierarchy=None):
     output = {'error': None}
     try:
-        output['items'] = get_devices_and_users(hierarchy=hierarchy, order_by=('location', 'last_modified', 'ASC'))
-
+        output['items'] = get_devices_divided_by_hierarchy(use_asynchronous_data=True, hierarchy=hierarchy)
     except Exception as e:
         traceback.print_exc()
         output = format_error_dictionary(str(e))
@@ -122,51 +122,6 @@ def get_devices_and_users(mac_address=None, hierarchy=None, user_name=None, orde
     return items
 
 
-def get_devices_divided_by_hierarchy(use_asynchronous_data=True):
-    items = get_devices_and_users()
-    registered_users = items['registered_users']
-    unknown_devices = items['unknown_devices']
-    if use_asynchronous_data and len(registered_users) == 0 and len(unknown_devices) == 0:
-        if len(registered_users) == len(unknown_devices) == 0:
-            try:
-                clients_information = get_api_cmx().get_clients_list()
-                if clients_information:
-                    for info in clients_information:
-                        item = {}
-                        location_info = None
-                        currently_tracked = info['currentlyTracked']
-                        mac_address = info['macAddress']
-                        if currently_tracked and 'mapHierarchyString' in info['mapInfo']:
-                            hierarchy = info['mapInfo']['mapHierarchyString']
-                            coord_x = info['mapCoordinate']['x']
-                            coord_y = info['mapCoordinate']['y']
-                            last_modified = info['statistics']['lastLocatedTime']
-                            location_info = __serialize_location_information(coord_x, coord_y, hierarchy, last_modified,
-                                                                             'static')
-                            user = db_session.query(RegisteredUser).filter(
-                                RegisteredUser.mac_address == mac_address).first()
-                            if user:
-                                item['user_info'] = __serialize_user_information(user.name, user.phone, user.id)
-                                registered_users.append(item)
-                            else:
-                                unknown_devices.append(item)
-                        item['location'] = location_info
-            except:
-                traceback.print_exc()
-
-    hierarchies = []
-    current_hierarchy = None
-    for i in items['registered_users']:
-        current_hierarchy = __filter_hierarchy(i['location']['hierarchy'], hierarchies, current_hierarchy)
-        current_hierarchy['registered_users'].append(i)
-
-    for i in items['unknown_devices']:
-        current_hierarchy = __filter_hierarchy(i['location']['hierarchy'], hierarchies, current_hierarchy)
-        current_hierarchy['unknown_devices'].append(i)
-
-    return hierarchies
-
-
 def __filter_hierarchy(hierarchy_name, hierarchies, last_hierarchy=None):
     if last_hierarchy and last_hierarchy['name'] == hierarchy_name:
         output = last_hierarchy
@@ -197,6 +152,59 @@ def format_error_dictionary(error_message, error_code=None):
         }
     }
     return output
+
+
+def get_devices_divided_by_hierarchy(use_asynchronous_data=True, hierarchy=None):
+    items = get_devices_and_users()
+    registered_users = items['registered_users']
+    unknown_devices = items['unknown_devices']
+    if use_asynchronous_data and len(registered_users) == 0 and len(unknown_devices) == 0:
+        if len(registered_users) == len(unknown_devices) == 0:
+            try:
+                clients_information = get_api_cmx().get_clients_list()
+                if clients_information:
+                    for info in clients_information:
+                        item = {}
+                        location_info = None
+                        currently_tracked = info['currentlyTracked']
+                        mac_address = info['macAddress']
+                        if currently_tracked and 'mapHierarchyString' in info['mapInfo']:
+                            h = info['mapInfo']['mapHierarchyString']
+                            coord_x = info['mapCoordinate']['x']
+                            coord_y = info['mapCoordinate']['y']
+                            last_modified = info['statistics']['lastLocatedTime']
+                            location_info = __serialize_location_information(coord_x, coord_y, h, last_modified,
+                                                                             'static')
+                            user = db_session.query(RegisteredUser).filter(
+                                RegisteredUser.mac_address == mac_address).first()
+                            if user:
+                                item['user_info'] = __serialize_user_information(user.name, user.phone, user.id)
+                                registered_users.append(item)
+                            else:
+                                unknown_devices.append(item)
+                        item['location'] = location_info
+                        item['mac_address'] = mac_address
+            except:
+                traceback.print_exc()
+
+    hierarchies = []
+    current_hierarchy = None
+    for i in items['registered_users']:
+        current_hierarchy = __filter_hierarchy(i['location']['hierarchy'], hierarchies, current_hierarchy)
+        current_hierarchy['registered_users'].append(i)
+
+    for i in items['unknown_devices']:
+        current_hierarchy = __filter_hierarchy(i['location']['hierarchy'], hierarchies, current_hierarchy)
+        current_hierarchy['unknown_devices'].append(i)
+
+
+    if hierarchy:
+        try:
+            hierarchies = __filter_hierarchy(hierarchy, hierarchies)
+        except:
+            hierarchies = []
+
+    return hierarchies
 
 
 def is_expired(last_modified):
