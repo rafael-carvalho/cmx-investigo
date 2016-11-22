@@ -146,6 +146,23 @@ function updateScreen(msg) {
                 user_coordinates.push(coordinate);
             }
 
+            $('#registered_users').html('');
+            var html = '';
+            for (var i = 0; i < msg.items.registered_users.length; i++) {
+                var item = msg.items.registered_users[i]
+                var coordinate = [item.location.coord_x, item.location.coord_y];
+                user_coordinates.push(coordinate);
+                html = '<li>';
+                html += '<a href="';
+                html += "{{url_for('mod_monitor.device_show')}}"
+                html += '/' + item.mac_address;
+                html += '">';
+                html += item.mac_address;
+                html += '</a>';
+                html += '</li>';
+                $('#registered_users').append(html);
+            }
+
         }
         if (msg.items.unknown_devices.length > 0) {
             var item = msg.items.unknown_devices[0];
@@ -162,7 +179,7 @@ function updateScreen(msg) {
             for (var i = 0; i < msg.items.unknown_devices.length; i++) {
                 var item = msg.items.unknown_devices[i]
                 var coordinate = [item.location.coord_x, item.location.coord_y];
-                user_coordinates.push(coordinate);
+                unknown_devices_coordinates.push(coordinate);
                 html = '<li>';
                 html += '<a href="';
                 html += "{{url_for('mod_monitor.device_show')}}"
