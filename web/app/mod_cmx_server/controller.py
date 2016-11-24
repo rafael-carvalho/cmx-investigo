@@ -167,12 +167,15 @@ def download_floor_images(api):
     print ('Downloading images from {} floors'.format(len(floors)))
     for floor in floors:
         try:
-            filename = os.path.join(app.static_folder, 'maps/{}.png'.format(floor.name))
+            treated_floor_name = ''.join(e for e in floor.name if e.isalnum())
+            print(treated_floor_name)
+            filename = os.path.join(app.static_folder, 'maps/{}.png'.format(treated_floor_name))
+
             response = api.download_hierarchy_image(floor.image_name)
-            with open(filename,  'wb') as fo:
+            with open(filename,  'w+') as fo:
                 fo.write(response.content)
                 fo.close()
-                floor.map_path = url_for('static', filename="maps/{}.png".format(floor.name))
+                floor.map_path = url_for('static', filename="maps/{}.png".format(treated_floor_name))
         except:
             traceback.print_exc()
             print ('Could not download image for {}'.format(floor.name))

@@ -40,6 +40,7 @@ $.fn.serializeObject = function()
 $(document).ready(function(){
 
 var verticals_json;
+
 $.getJSON("{{url_for('static', filename='server_config/verticalization.json')}}", function(json){
     verticals_json = json;
 

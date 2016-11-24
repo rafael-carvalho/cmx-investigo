@@ -58,8 +58,14 @@ class SparkAPICaller(APICaller):
             data["markdown"] = markdown
         if (files):
             data["files"] = files
-        
+
+
+        print(json.dumps(data, indent=2))
+
         payload = json.dumps(data)
+
+
+
         
         url = self.__buildURLMessages() 
         return super(SparkAPICaller, self).requestHTTP(url, "POST", self.sparkHeaders, payload)

@@ -304,7 +304,7 @@ def __get_map_information(hierarchy):
     floor = db_session.query(Floor).filter(Floor.name == floor_name).first()
     if floor:
         output = {
-            'map_path': url_for('static', filename='maps/{}.png'.format(floor.name)),
+            'map_path': url_for('static', filename=floor.map_path),
             'floor_width': str(floor.floor_width),
             'floor_height': str(floor.floor_height),
             'floor_length': str(floor.floor_length),

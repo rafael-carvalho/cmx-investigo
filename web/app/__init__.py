@@ -49,6 +49,8 @@ from app.mod_user.controller import mod_user as user_mod
 from app.mod_simulation.controller import mod_simulation as simulation_mod
 from app.mod_engagement.controller import mod_engagement as engagement_mod
 from app.mod_error.controller import mod_error as error_mod
+from app.mod_spark.controller import mod_spark as spark_mod
+
 from app.mod_api import controller as api_controller
 
 # Register blueprint(s)
@@ -60,6 +62,7 @@ app.register_blueprint(user_mod)
 app.register_blueprint(simulation_mod)
 app.register_blueprint(engagement_mod)
 app.register_blueprint(error_mod)
+app.register_blueprint(spark_mod)
 
 # app.register_blueprint(xyz_module)
 # ..
