@@ -7,7 +7,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from app.database import db_session
 from externalapis.CMXAPICaller import CMXAPICaller
-from externalapis.SparkAPICaller import SparkAPICaller
+from ciscosparkapi import CiscoSparkAPI
 from externalapis.TropoAPICaller import TropoAPICaller
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def get_api_cmx(cmx_server=None):
 
 
 def get_api_spark():
-    return SparkAPICaller('OWQzZGE4YTItNDZkMC00MTVkLTk4NzMtNzBkY2RmNDI4MDllZThkYTIyNzItMzI5')
+    return CiscoSparkAPI(access_token='OWQzZGE4YTItNDZkMC00MTVkLTk4NzMtNzBkY2RmNDI4MDllZThkYTIyNzItMzI5')
 
 
 def get_api_tropo():

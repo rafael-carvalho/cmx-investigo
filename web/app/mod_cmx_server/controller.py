@@ -168,7 +168,6 @@ def download_floor_images(api):
     for floor in floors:
         try:
             treated_floor_name = ''.join(e for e in floor.name if e.isalnum())
-            print(treated_floor_name)
             filename = os.path.join(app.static_folder, 'maps/{}.png'.format(treated_floor_name))
 
             response = api.download_hierarchy_image(floor.image_name)

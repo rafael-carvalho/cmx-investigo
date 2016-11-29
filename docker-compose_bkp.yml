@@ -1,0 +1,48 @@
+version: '1'
+web:
+  restart: always
+  #image: containers.cisco.com/rafacarv/cmx-finder:latest
+  build: ./web
+  container_name: "cmx-finder-web"
+  expose:
+    - "8000"
+  links:
+    - postgres:postgres
+  volumes:
+    - /usr/src/app/static
+  #env_file: web/.env
+  command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
+
+nginx:
+  restart: always
+  #image: containers.cisco.com/rafacarv/nginx:latest
+  build: ./nginx
+  container_name: "cmx-finder-nginx"
+  ports:
+    - "80:80"
+  volumes:
+    - /www/static
+  volumes_from:
+    - web
+  labels:
+    io.rancher.sidekicks: web
+  links:
+    - web:web
+
+data:
+  image: postgres:latest
+  container_name: "cmx-finder-data"
+  volumes:
+    - /var/lib/postgresql
+  command: "true"
+
+postgres:
+  container_name: "cmx-finder-db"
+  restart: always
+  image: postgres:latest
+  volumes_from:
+    - data
+  labels:
+    io.rancher.sidekicks: data
+  ports:
+    - "5432:5432"

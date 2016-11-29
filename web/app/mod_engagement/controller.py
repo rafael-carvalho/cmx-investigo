@@ -135,7 +135,7 @@ def fire_user_zone_trigger():
                 if trigger.platform == 'spark':
                     # do action
                     room_id = trigger.target
-                    response = get_api_spark().postMessage(room_id, text)
+                    response = get_api_spark().messages.create(roomId=room_id, text=text)
                 elif trigger.platform == 'tropo':
                     number = trigger.target
                     number = replace_user_info_on_trigger_text(number, user)
