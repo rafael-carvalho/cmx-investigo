@@ -74,8 +74,8 @@ def clear_db():
                 sql += 'TRUNCATE {} CASCADE;'.format(table.name)
 
             db_engine.execute(sql)
-
             trans.commit()
+            db_session.commit()
 
     except Exception as e:
         output = {

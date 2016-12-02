@@ -73,6 +73,7 @@ def index():
     return render_template('home/index.html')
 
 
+@app.route('/clear_db')
 @app.route('/clear')
 def clear():
     return Response(json.dumps(invoke_db_clear()), mimetype='application/json')

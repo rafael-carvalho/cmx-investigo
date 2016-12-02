@@ -131,6 +131,7 @@ function updateScreen(msg) {
         var floor_length = null;
         var image_width = null;
         var image_height = null;
+        $('#registered_users').html('');
         if (msg.items.registered_users.length > 0) {
             var item = msg.items.registered_users[0];
             floor_width = item.location.map_information.floor_width
@@ -146,7 +147,7 @@ function updateScreen(msg) {
                 user_coordinates.push(coordinate);
             }
 
-            $('#registered_users').html('');
+
             var html = '';
             for (var i = 0; i < msg.items.registered_users.length; i++) {
                 var item = msg.items.registered_users[i]
@@ -164,6 +165,7 @@ function updateScreen(msg) {
             }
 
         }
+        $('#unknown_devices').html('');
         if (msg.items.unknown_devices.length > 0) {
             var item = msg.items.unknown_devices[0];
 
@@ -174,7 +176,6 @@ function updateScreen(msg) {
             image_height = item.location.map_information.image_height
             map_path = item.location.map_information.map_path
 
-            $('#unknown_devices').html('');
             var html = '';
             for (var i = 0; i < msg.items.unknown_devices.length; i++) {
                 var item = msg.items.unknown_devices[i]

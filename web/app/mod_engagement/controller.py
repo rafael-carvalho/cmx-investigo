@@ -136,13 +136,13 @@ def fire_user_zone_trigger():
                     # do action
                     room_id = trigger.target
                     response = get_api_spark().messages.create(roomId=room_id, text=text)
+                    ok = response
                 elif trigger.platform == 'tropo':
                     number = trigger.target
                     number = replace_user_info_on_trigger_text(number, user)
                     tropo_platform = trigger.extras
                     response = get_api_tropo().triggerTropoWithMessageAndNumber(text, number, voice="dave", type=tropo_platform)
-
-                ok = response.status_code == 200
+                    ok = response.status_code == 200
 
                 if ok:
                     output = {
