@@ -187,11 +187,10 @@ def replace_user_info_on_trigger_text(text, user):
 
 
 def replace_zone_information(text, zone):
-    text = text.replace('{zone.name}', str(zone.name))
+    text = text.replace('{zone.name}', str(zone.verticalization.vertical_name))
     text = text.replace('{zone.id}', str(zone.id))
     text = text.replace('{zone.floor}', str(zone.floor.name))
     return text
-
 
 
 def get_engagement_triggers_per_zone(zone_id):
