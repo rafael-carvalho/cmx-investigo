@@ -79,15 +79,19 @@ class Campus(Base):
     __tablename__ = "campus"
     aes_uid = Column(BigInteger, primary_key=True, unique=True)
     name = Column(String, unique=True)
+    vertical_name = Column(String, nullable=True)
     cmx_system_id = Column(Integer, ForeignKey('cmx_system.id', ondelete='cascade'))
     cmx_system = relationship("CMXSystem", back_populates="campuses")
     buildings = relationship("Building", cascade="all, delete-orphan", lazy='dynamic')
 
-    def __init__(self, aes_uid, name, buildings=None):
+    def __init__(self, aes_uid, name, buildings=None, vertical_name=None):
         self.aes_uid = aes_uid
         self.name = name
-        if (buildings is not None):
+        if buildings:
             self.buildings = buildings
+
+        if vertical_name:
+            self.vertical_name = vertical_name
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -103,6 +107,7 @@ class Campus(Base):
             'aes_uid': self.aes_uid,
             'name': self.name,
             'cmx_system_id': self.cmx_system_id,
+            'vertical_name': self.vertical_name,
             'buildings': buildings
         }
         return item
@@ -113,17 +118,21 @@ class Building(Base):
     aes_uid = Column(BigInteger, primary_key=True, unique=True)
     object_version = Column(Integer, default=0)
     name = Column(String, unique=True)
+    vertical_name = Column(String, nullable=True)
     campus_id = Column(BigInteger, ForeignKey('campus.aes_uid', ondelete='cascade'))
     campus = relationship("Campus", back_populates="buildings")
     floors = relationship("Floor", cascade="all, delete-orphan", lazy='dynamic')
 
-    def __init__(self, campus_id, aes_uid, object_version, name, floors=None):
+    def __init__(self, campus_id, aes_uid, object_version, name, floors=None, vertical_name=None):
         self.aes_uid = aes_uid
         self.object_version = object_version
         self.name = name
         self.campus_id = campus_id
         if floors is not None:
             self.floors = floors
+
+        if vertical_name:
+            self.vertical_name = vertical_name
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -140,6 +149,7 @@ class Building(Base):
             'object_version': self.object_version,
             'name': self.name,
             'campus_id': self.campus_id,
+            'vertical_name': self.vertical_name,
             'floors': floors
         }
         return item
@@ -153,6 +163,7 @@ class Floor(Base):
     calibration_model_id = Column(BigInteger)
     object_version = Column(Integer, default=0)
     name = Column(String)
+    vertical_name = Column(String, nullable=True)
 
     # dimension
     floor_length = Column(Numeric)
@@ -173,11 +184,12 @@ class Floor(Base):
 
     map_path = Column(String)
 
+
     zones = relationship("Zone", back_populates="floor", cascade="all, delete-orphan", lazy='dynamic')
 
     def __init__(self, building_id, aes_uid, calibration_model_id, object_version, name, floor_length, floor_width,
                  floor_height, floor_offset_x, floor_offset_y, floor_unit, image_name, image_zoom_level, image_width,
-                 image_height, image_size, image_max_resolution, image_color_depth, zones=None, map_path=None):
+                 image_height, image_size, image_max_resolution, image_color_depth, zones=None, map_path=None, vertical_name=None):
         self.building_id = building_id
         self.aes_uid = aes_uid
         self.calibration_model_id = calibration_model_id
@@ -199,6 +211,9 @@ class Floor(Base):
         if zones:
             self.zones = zones
         self.map_path = map_path
+
+        if vertical_name:
+            self.vertical_name = vertical_name
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -230,6 +245,7 @@ class Floor(Base):
             'image_max_resolution': float(self.image_max_resolution),
             'image_color_depth': float(self.image_color_depth),
             'map_path': self.map_path,
+            'vertical_name': self.vertical_name,
             'zones': zones
         }
         return item
@@ -240,14 +256,21 @@ class Zone(Base):
     floor_id = Column(BigInteger, ForeignKey('floor.aes_uid', ondelete='cascade'))
     floor = relationship("Floor", back_populates="zones")
     id = Column(Integer, primary_key=True, unique=True)
+    zone_center_x = Column(Numeric)
+    zone_center_y = Column(Numeric)
+    zone_center_z = Column(Numeric)
     name = Column(String)
     zone_type = Column(String, default="ZONE")
-    verticalization = relationship("Verticalization", uselist=False, cascade="all, delete-orphan", back_populates="zone")
+    vertical_name = Column(String, nullable=True)
+    max_occupation = Column(Integer, default=-1)
 
-    def __init__(self, floor_id, name, zone_type):
+    def __init__(self, floor_id, name, zone_type, zone_center_x, zone_center_y, zone_center_z):
         self.floor_id = floor_id
         self.name = name
         self.zone_type = zone_type
+        self.zone_center_x = zone_center_x
+        self.zone_center_y = zone_center_y
+        self.zone_center_z = zone_center_z
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -261,7 +284,11 @@ class Zone(Base):
             'floor_id': self.floor_id,
             'name': self.name,
             'zone_type': self.zone_type,
-            'verticalization': self.serialize_verticalization()
+            'zone_center_x': str(self.zone_center_x),
+            'zone_center_y': str(self.zone_center_y),
+            'zone_center_z': str(self.zone_center_z),
+            'vertical_name': self.vertical_name,
+            'max_occupation': self.max_occupation,
         }
         return item
 
@@ -270,28 +297,6 @@ class Zone(Base):
         if self.verticalization:
             output = self.verticalization.serialize()
         return output
-
-
-class Verticalization (Base):
-    __tablename__ = "verticalization"
-    id = Column(Integer, primary_key=True, unique=True)
-    vertical_name = Column(String, nullable=True)
-    max_occupation = Column(Integer, default=-1)
-    zone_id = Column(Integer, ForeignKey('zone.id', ondelete='cascade'))
-    zone = relationship("Zone", back_populates="verticalization")
-
-    def __init__(self, vertical_name, max_occupation, zone_id):
-        self.vertical_name = vertical_name
-        self.max_occupation = max_occupation
-        self.zone_id = zone_id
-
-    def serialize(self):
-        item = {
-            'id': self.id,
-            'vertical_name': self.vertical_name,
-            'max_occupation': self.max_occupation,
-        }
-        return item
 
 
 class DeviceLocation(Base):

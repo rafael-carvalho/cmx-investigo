@@ -1,142 +1,301 @@
+from ciscosparkapi.api.messages import Message
 from flask import Blueprint, request, url_for
 import traceback
 import json
 import os
 import datetime
 from app import app
-from app import get_api_spark
+from app import get_api_spark, get_api_tropo, get_notification_sms_phone_number
 from app.database import db_session
 from app.mod_user.models import RegisteredUser
 from app.mod_api.controller import get_device_location
 import plotly.plotly as py
 import plotly.graph_objs as go
-import numpy as np
-py.sign_in('rafacarv', 'zMrWUiu61ulJhbKBLSSV')
+import math
 
+from app.models import Floor, Zone
+
+py.sign_in('rafacarv', 'zMrWUiu61ulJhbKBLSSV')
+import re
+from sqlalchemy import func
 
 mod_spark = Blueprint('mod_spark', __name__, url_prefix='/spark')
 
-@mod_spark.route('/', methods=['GET', 'POST'])
+@mod_spark.route('/webhook', methods=['GET', 'POST'])
 def home():
     output = "Empty"
     try:
         parsed_input = parse_user_input(request)
 
-        message = parsed_input["message"]
-        message_id = parsed_input["message_id"]
-        person_id = parsed_input["person_id"]
-        person_email = parsed_input["person_email"]
-        room_id = parsed_input["room_id"]
+        message = parsed_input
+        room_id_received_on_message = message.roomId
 
         # this logs the message on the console
-        print ("Received: {}".format(message))
+        print ("Received: {}".format(message.text))
 
-        # Build here the message that you want to post back on the same Spark room.
-        will_reply_something = False
+        # Here you will analyze all the messages received on the room and react to them
+        message_text = message.text
 
-        # Setting up some default values for the message to be posted.
-        post_roomId = room_id  # Usually it's the same room where you received the message.
+        first_word = message_text.lower().strip()
+
+        if first_word.startswith('find'):
+            output = command_find(message)
+
+        elif first_word.startswith('list'):
+            output = command_list(message)
+
+        elif first_word.startswith('add'):
+            output = command_add(message)
+
+        if not output:
+            output = 'Command not identified'
+            write_to_spark(room_id=room_id_received_on_message, text=output)
+    except Exception as e:
+        traceback.print_exc()
+        output = str(e)
+
+    return output
+
+
+def command_list(message):
+    message_text = message.text
+    second_word = __replace_string_case_insensitive(message_text, 'list', '').strip().lower()
+    post_markdown = None
+    post_text = None
+
+    if second_word in ['users', 'user', 'asset', 'assets']:
+        users = db_session.query(RegisteredUser).all()
+
+        post_text = '{} items were found:'.format(len(users))
+        post_markdown = "# {}\n".format(post_text)
+
+        user_names = []
+        for user in users:
+            user_names.append(user.name)
+            post_markdown += '{}. {} ({})\n'.format(len(user_names), user.name, user.mac_address)
+
+        post_text += ' {}'.format(user_names)
+
+    else:
+        post_text = 'List command not valid'
+
+    write_to_spark(message.roomId, None, None, post_text, post_markdown, None)
+
+    return post_text
+
+
+def command_add(message):
+    post_text = 'Command not valid... Usage = add user/asset name MAC_address phone[optional]'
+    try:
+        message_text = message.text.strip()
+        message_pieces = message_text.split(' ')
+        second_word = message_pieces[1].lower()
+        if second_word in ['user', 'asset', 'user/asset']:
+            name = message_pieces[2]
+            mac_address = message_pieces[3]
+            phone = None
+            if len(message_pieces) > 4:
+                phone = message_pieces[3]
+
+            try:
+                user = RegisteredUser(name, mac_address, phone)
+                db_session.add(user)
+                db_session.commit()
+                post_text = 'Item created successfully'
+            except Exception as e:
+                if 'duplicate key value violates unique constraint "registered_user_mac_address_key"' in str(e):
+                    post_text = 'MAC Address already registered. Try a different value'
+                else:
+                    post_text = str(e)
+                db_session.rollback()
+    except:
+        pass
+
+    finally:
+        write_to_spark(message.roomId, None, None, post_text, None, None)
+
+    return post_text
+
+
+def command_find(message):
+    try:
+
+        success = False
+
+
         post_to_person_id = None  #
         post_to_person_email = None
         post_text = None
         post_markdown = None
         post_files = None
+        post_room_id = message.roomId
 
-        # Here you will analyze all the messages received on the room and react to them
-        if message.lower().strip().startswith('find'):
-            message = message.replace('find', '').strip()
-            mac = None
-            if message.lower().strip().startswith('user'):
-                content = message.replace('user', '').strip()
-                user = db_session.query(RegisteredUser).filter(RegisteredUser.name == content).first()
+        user_name = None
 
-                if user:
-                    mac = user.mac_address
+        message_text = message.text
+        message_text = message_text.replace('find', '').strip()
+
+        message_text = __replace_string_case_insensitive(message_text, 'find', '').strip()
+
+        mac = None
+
+        if message_text.startswith('user') or message_text.startswith('asset'):
+            content = message_text.replace('user', '').replace('asset', '').strip()
+            user = db_session.query(RegisteredUser).filter(func.lower(RegisteredUser.name) == func.lower(content)).first()
+
+            if user:
+                mac = user.mac_address
+                user_name = user.name
+            else:
+                post_text = "I am sorry. I could not find any user named {}".format(content)
+
+        else:
+            mac = message_text
+
+        if mac:
+            location = get_device_location(mac, True)
+            # print(json.dumps(location, indent=2))
+            location = location['unknown_devices'] + location['registered_users']
+            if len(location) > 0:
+
+                location = location[0]['location']
+                map_path = location['map_information']['map_path']
+                background_image_path = url_for('static', filename=map_path.replace('/static/', ''), _external=True)
+                background_image_path = 'http://cmx-finder.herokuapp.com' + map_path
+                destination_x = int(math.floor(float(location['coord_x'])))
+                destination_y = int(math.floor(float(location['coord_y'])))
+                image_width = float(location['map_information']['image_width'])
+                image_height = float(location['map_information']['image_height'])
+                floor_width = float(location['map_information']['floor_width'])
+                floor_length = float(location['map_information']['floor_length'])
+                #local_file = plot_point_over_image(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_length)
+
+                hierarchies = location['hierarchy']
+                last_modified_ago = location['last_modified_ago']
+                # image_path = url_for('static', filename=local_file, _external=True)
+
+                # post_files = ['http://static.dnaindia.com/sites/default/files/2015/09/15/373721-wikipedia1.png']
+                post_text = 'Device is at {}. Coordinates: ({}, {}). Information obtained {} ago'.format(
+                    location['hierarchy'], destination_x, destination_y, location['last_modified_ago'])
+
+
+
+
+
+                splitted_hierarchies = hierarchies.split('>')
+                campus_name = splitted_hierarchies[0]
+                building_name = splitted_hierarchies[1]
+                floor_name = splitted_hierarchies[2]
+                zone_name = None
+
+                combined_hierarchies = '{}>{}>{}'.format(campus_name, building_name, floor_name)
+                if len(splitted_hierarchies) > 3:
+                    zone_name = splitted_hierarchies[3]
+                    combined_hierarchies += '>{}'.format(zone_name)
+
+                floor = db_session.query(Floor).filter(Floor.name == floor_name).first()
+                if floor.vertical_name:
+                    floor_name = floor.vertical_name
+                    building_name = floor.building.vertical_name
+                    campus_name = floor.building.campus.vertical_name
+                    if zone_name:
+                        zone = db_session.query(Zone).filter(Zone.name == zone_name).first()
+                        if zone.vertical_name:
+                            zone_name = zone.vertical_name
+
+                combined_hierarchies = '{}>{}>{}'.format(campus_name, building_name, floor_name)
+                if zone_name:
+                    combined_hierarchies += '>{}'.format(zone_name)
+
+                origin_zone = floor.zones[0] # For the sake of the demo, I am positioning the requester on the first zone of the current floor
+
+
+                origin_x = int(math.floor(origin_zone.zone_center_x))
+                origin_y = int(math.floor(origin_zone.zone_center_y))
+
+                distance = int(math.floor(math.hypot(destination_x - origin_x, destination_y - origin_y)))
+
+                post_markdown = "# The device has been found!\n"
+                post_markdown += "Check attached map and the information below:\n"
+                if user_name:
+                    post_markdown += '+ **Name**: {}\n'.format(user_name)
+                post_markdown += '+ **Distance**: {} feet\n'.format(distance)
+
+
+                post_markdown += '+ **Campus**: {}\n'.format(campus_name)
+                post_markdown += '+ **Building**: {}\n'.format(building_name)
+                post_markdown += '+ **Floor**: {}\n'.format(floor_name)
+
+                if zone_name:
+                    post_markdown += '+ **Zone**: {}\n'.format(zone_name)
+                post_markdown += '+ **Last seen**: {} ago\n'.format(last_modified_ago)
+                #post_markdown += '+ **Coordinates**: ({}, {})\n'.format(destination_x, destination_y)
+                if user_name:
+                    post_markdown += '\n \n_The staff has been notified to pick it up. Click [here]({}) for live tracking._'.format(url_for('mod_monitor.device_show', mac=mac, _external=True))
                 else:
-                    post_text = "I am sorry. I could not find any user named {}".format(content)
+                    post_markdown += '\n \n_Click [here]({}) for live tracking._'.format(
+                        url_for('mod_monitor.device_show', mac=mac, _external=True))
+
+                local_file = \
+                plot_origin_and_destination_over_image(background_image_path, origin_x, origin_y, destination_x,
+                                                       destination_y, image_width, image_height, floor_width, floor_length, distance)[
+                    0]
+
+                post_files = [local_file]
+                success = True
+
+
+
 
             else:
-                mac = message
+                post_text = 'Device not found'
 
-            if mac:
-                location = get_device_location(mac, True)
-                print(json.dumps(location, indent=2))
-                location = location['unknown_devices'] + location['registered_users']
-                if len(location) > 0:
-                    location = location[0]['location']
-                    map_path = location['map_information']['map_path'].replace('/static/', '')
-                    filename = os.path.join(app.static_folder, map_path)
-                    """
-                    from matplotlib import pyplot as plt
-                    im = plt.imread(filename)
-                    implot = plt.imshow(im)
-                    plt.scatter(location['coord_x'], location['coord_y'])
-                    filename = os.path.join(app.static_folder, 'maps/test.png')
-                    plt.savefig(filename)
-                    post_files = [filename]
-                    print(post_files)
-                    #files = {'file': ('report.xls', open('report.xls', 'rb'), 'type=image/png', {'Expires': '0'})}
-                    """
-                    #filename = plot_point_over_image(filename, location['coord_x'], location['coord_y'])
-                    #(background_image_path, coord_x, coord_y, image_width, image_height):)
-
-                    post_text = 'Device is at {}. Coordinates: ({}, {}). Information obtained {} ago'.format(location['hierarchy'], location['coord_x'], location['coord_y'], location['last_modified_ago'])
-                else:
-                    post_text = 'Device not found'
-        if not post_text:
-            post_text = 'Unidentified command'
-
-        write_to_spark(post_roomId, post_to_person_id, post_to_person_email, post_text, post_markdown, post_files)
-
-    except Exception as e:
+        if post_text is not None or post_markdown is not None:
+            if success and user_name:
+                person = get_api_spark().people.get(message.personId)
+                tropo_text = 'Please bring {} to Dr. {}. It is located at {}'.format(user_name, person.displayName, combined_hierarchies)#, url_for('mod_monitor.device_show', mac=mac, _external=True))
+                get_api_tropo().triggerTropoWithMessageAndNumber(tropo_text, get_notification_sms_phone_number(), type='text')
+            write_to_spark(post_room_id, post_to_person_id, post_to_person_email, post_text, post_markdown, post_files)
+            if post_files:
+                os.remove(post_files[0])
+    except:
+        post_text = 'An unexpected error occurred. Please try again in a few moments.'
         traceback.print_exc()
-        post_text = str(e)
-
-    # The return of the message will be sent via HTTP (not to Spark, but to the client who requested it)
     return post_text
+
+
+
 
 
 def parse_user_input(req):
     """Helper function to parse the information received by spark."""
-
     http_method = None
 
     if req.method == "GET":
-        http_method = "GET"
-        message = req.args["message"]
-        message_id = "FAKE"
-        person_id = "FAKE"
-        person_email = "FAKE"
-        room_id = "Y2lzY29zcGFyazovL3VzL1JPT00vYTY0NDFmMDAtNWZmNC0xMWU2LTkwODctN2IzY2QxMWYwYzg3"
+        fake_json = {
+          "roomType": "direct",
+          "created": "2016-12-02T23:27:30.199Z",
+          "personId": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS82NmVjMDkyNi0zOTUxLTRkMDUtYWRlMC00YWIxOGZmMzQwZGE",
+          "text": req.args["message"],
+          "personEmail": "rafacarv@cisco.com",
+          "roomId": "Y2lzY29zcGFyazovL3VzL1JPT00vMjQ2YTI5OGQtNTgyOS0zY2JlLTk3NmQtYjUyOWRiZDgwZjg5",
+          "id": "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvZTRjY2JhNzAtYjhlNi0xMWU2LTkxNTktN2Q4NWUzOWFjYTc0"
+        }
+        output = Message(fake_json)
 
     elif req.method == "POST":
-        http_method = "POST"
-
         # Get the json data from HTTP request. This is what was written on the Spark room, which you are monitoring.
-        requestJson = req.json
-        # print (json.dumps(reqJson))
-
-        # parse the message id, person id, person email, and room id
-        message_id = requestJson["data"]["id"]
-        person_id = requestJson["data"]["personId"]
-        person_email = requestJson["data"]["personEmail"]
-        room_id = requestJson["data"]["roomId"]
-
+        request_json = req.json
+        message_id = request_json["data"]["id"]
         # At first, Spark does not give the message itself, but it gives the ID of the message. We need to ask for the content of the message
         message = read_from_spark(message_id)
-
-    else:
-        output = "Error parsing user input on {} method".format(http_method)
-        raise Exception(output)
-
-    output = {"message": message, "message_id": message_id, "person_id": person_id, "person_email": person_email,
-              "room_id": room_id}
+        output = message
     return output
 
 
 def read_from_spark(message_id):
     try:
-        message = get_api_spark().getMessage(message_id)
+        message = get_api_spark().messages.get(message_id)
     except:
         raise Exception("Error while trying to READ from Spark.")
     return message
@@ -145,7 +304,7 @@ def read_from_spark(message_id):
 def write_to_spark(room_id, to_person_id, to_person_email, text, markdown, files):
     try:
         if room_id != "FAKE":
-            get_api_spark().messages.create(files=files, roomId=room_id, text=text)
+            return get_api_spark().messages.create(files=files, roomId=room_id, text=text, markdown=markdown)
     except:
         traceback.print_exc()
         raise Exception("Error while trying to WRITE to Spark.")
@@ -153,69 +312,228 @@ def write_to_spark(room_id, to_person_id, to_person_email, text, markdown, files
 
 @mod_spark.route('/plot', methods=['GET'])
 def plot():
-    # Ideas
-    # plot_point_over_image('maps/IDEAS.png', 10, 10, 568, 1080, 15, 39)
-    # DevNet Zone
-    filename = plot_point_over_image('maps/DevNetZone.png', 10, 10, 2038, 544, 307, 16.5)
-    path = url_for('static', filename=filename, _external=True)
-    html = '<a href="{}">{}</a>'.format(path, path)
+
+    #html = '<a href="{}">{}</a>'.format(path, path)
+    background_image_path = 'http://cmx-finder.herokuapp.com/static/maps/DevNetZone.png'
+    origin_x = 107
+    origin_y = 18
+
+    destination_x = origin_x + 100
+    destination_y = origin_y + 50
+
+    floor_length = 81.9
+    floor_width = 307.0
+    image_height = 544.0
+    image_width = 2038.0
 
 
+    output = plot_origin_and_destination_over_image(background_image_path, origin_x, origin_y, destination_x, destination_y, image_width, image_height, floor_width, floor_length)
+    #path = url_for('static', filename=filename, _external=True)
+    #print (filename)
 
-    html = '<img src="{}" />'.format(path)
+    html = '<img src="{}" />'.format(output[1])
     return html
 
 
-def plot_point_over_image(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_height):
-    return plot_point_over_image_new(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_height)
+def __replace_string_case_insensitive(string, find, replace):
+    insensitive_hippo = re.compile(re.escape(find), re.IGNORECASE)
+    return insensitive_hippo.sub(replace, string)
 
 
-def plot_point_over_image_model(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_height):
-    """
-    DON'T USE ME
-    """
-    # https://plot.ly/python/reference/#layout-images
-    trace1 = go.Scatter(x=[0], y=[0])
-    layout = go.Layout(images=[dict(
+def plot_point_over_image(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_length):
+    #plot_x = coord_x * image_width / floor_width
+    #plot_y = coord_y * image_height / floor_length
+    plot_x = math.floor((image_width / floor_width) * coord_x)
+    plot_y = math.floor((image_height / floor_length) * coord_y)
+
+    plot_x = coord_x
+    plot_y = coord_y
+    #print('({},{})'.format(plot_x, plot_y))
+
+
+    marker_size = 0.02 * max(image_width, image_height)
+    trace1 = go.Scatter(
+        x=[coord_x],
+        y=[coord_y],
+        #mode='markers+text',
+
+        #text=['Current position'],
+        #textposition='top',
+        mode='markers',
+        marker=dict(
+            size=marker_size,
+            symbol='x-open',
+            color='rgb(255,255,0)',
+            line=dict(
+                width=marker_size/10,
+                color='rgb(0, 0, 0)'
+            )
+        )
+    )
+    layout = go.Layout(
+        width=image_width,
+        height=image_height,
+        #https://plot.ly/python/axes/
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showline=False,
+            autotick=True,
+            ticks='',
+            showticklabels=False,
+            range=[0, floor_width],
+
+        ),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showline=False,
+            autotick=True,
+            ticks='',
+            showticklabels=False,
+            range=[floor_length, 0],
+        ),
+        plot_bgcolor='transparent',
+        paper_bgcolor='transparent',
+        # https://plot.ly/python/reference/#layout-images
+        images=[dict(
         # source="https://images.plot.ly/language-icons/api-home/python-logo.png",
-        source="http://cmx-finder.herokuapp.com/static/maps/DevNetZone.png",
-        xref="0",
-        yref="0",
+        #source="http://cmx-finder.herokuapp.com/static/maps/DevNetZone.png",
+        source=background_image_path,
+        xref="paper",
+        yref="paper",
         xanchor='left',
         yanchor='bottom',
         x=0,
         y=0,
         sizex=1,
         sizey=1,
-        sizing="contain",
+        sizing="stretch",
         opacity=1,
-        layer="above")])
+        layer="below")])
     fig = go.Figure(data=[trace1], layout=layout)
-    file_path = 'maps_plotted/my_image-{}.png'.format(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
-    saved_file_name = '/Users/rafacarv/workspace/cmx-finder-container/web/app/static/' + file_path
+    file_path = 'maps_temp/cmx_finder-{}.png'.format(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"))
+    saved_file_name = os.path.join(app.static_folder, file_path)
+    #print(saved_file_name)
     py.image.save_as(fig, saved_file_name)
-    return file_path
+    return saved_file_name
 
 
-def plot_point_over_image_new(background_image_path, coord_x, coord_y, image_width, image_height, floor_width, floor_height):
-    # https://plot.ly/python/reference/#layout-images
-    trace1 = go.Scatter(x=[0], y=[0])
-    layout = go.Layout(images=[dict(
+def plot_origin_and_destination_over_image(background_image_path, origin_x, origin_y, destination_x, destination_y, image_width, image_height, floor_width, floor_length, distance, text_origin='You are here', text_destination='Asset location'):
+
+    annotation_x = ((origin_x + destination_x)/2)
+    annotation_y = ((origin_y + destination_y)/2)
+
+
+    marker_size = 0.02 * max(image_width, image_height)
+
+
+
+    trace1 = go.Scatter(
+        x=[origin_x, destination_x],
+        y=[origin_y, destination_y],
+        text=[text_origin, text_destination],
+        textposition='bottom center',
+        textfont=dict(
+                    family='Courier New, monospace',
+                    size=16,
+                    color='#ffffff'
+                ),
+        mode='lines+markers+text',
+        marker=dict(
+            size=marker_size,
+            symbol=['circle', 'x'],
+            color=['red', 'yellow'],
+            line=dict(
+                width=marker_size/10,
+                color='rgb(0, 0, 0)'
+            )
+        ),
+        line=dict(
+            width=marker_size / 10,
+            color='blue'
+        ),
+
+    )
+    layout = go.Layout(
+        width=image_width,
+        height=image_height,
+        #https://plot.ly/python/axes/
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showline=False,
+            autotick=True,
+            ticks='',
+            showticklabels=False,
+            range=[0, floor_width],
+
+        ),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showline=False,
+            autotick=True,
+            ticks='',
+            showticklabels=False,
+            range=[floor_length, 0],
+        ),
+        plot_bgcolor='transparent',
+        paper_bgcolor='transparent',
+        annotations=[
+            dict(
+                x=annotation_x,
+                y=annotation_y,
+                xref='x',
+                yref='y',
+                text='Distance = {} feet'.format(distance),
+
+                font=dict(
+                    family='Courier New, monospace',
+                    size=16,
+                    color='#ffffff'
+                ),
+                align='center',
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor='#636363',
+                #ax=20,
+                # ay=-30,
+                bordercolor='#c7c7c7',
+                borderwidth=2,
+                borderpad=4,
+                bgcolor='#ff7f0e',
+                opacity=0.8
+            )
+        ],
+        # https://plot.ly/python/reference/#layout-images
+        images=[dict(
         # source="https://images.plot.ly/language-icons/api-home/python-logo.png",
-        source="http://cmx-finder.herokuapp.com/static/maps/DevNetZone.png",
-        xref="x",
-        yref="y",
+        #source="http://cmx-finder.herokuapp.com/static/maps/DevNetZone.png",
+        source=background_image_path,
+        xref="paper",
+        yref="paper",
         xanchor='left',
         yanchor='bottom',
         x=0,
         y=0,
         sizex=1,
         sizey=1,
-        sizing="contain",
+        sizing="stretch",
         opacity=1,
-        layer="above")])
+        layer="below")],
+
+    )
     fig = go.Figure(data=[trace1], layout=layout)
-    file_path = 'maps_plotted/my_image-{}.png'.format(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
-    saved_file_name = '/Users/rafacarv/workspace/cmx-finder-container/web/app/static/' + file_path
-    py.image.save_as(fig, saved_file_name)
-    return file_path
+    file_path = 'maps_temp/cmx_finder-{}.png'.format(datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"))
+    local_path = os.path.join(app.static_folder, file_path)
+    #print(saved_file_name)
+    py.image.save_as(fig, local_path)
+
+    relative_path = url_for('static', filename=file_path)
+    return (local_path, relative_path)
+
+
+

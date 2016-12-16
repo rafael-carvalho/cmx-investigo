@@ -47,6 +47,7 @@
         </tr>
     </table>
 </div>
+<hr style="border-top: 1px dashed #8c8b8b;">
 <div class="w3-container">
     {% for campus in object.get_hierarchies_serialized() %}
         <div class="campus w3-container">
@@ -54,8 +55,13 @@
                 <div class="building w3-container">
                     {% for floor in building.floors %}
                         <form id="{{id}}" class="">
-                            <h3>{{floor.name}}</h3>
+                            <h3>{{floor.name}}
+                            {% if floor.vertical_name %}
+                                 <span> ({{floor.vertical_name}})</span>
+                            {% endif %}
+                            </h3>
                             <table>
+
                                 <thead style="text-align:center; font-weight: bold;">
                                     <td>Zone name</td>
                                     <td>Vertical name</td>
@@ -69,9 +75,11 @@
                                     <td style="text-align:right;">{{zone.name}}</td>
                                     {% set vertical_name = 'N/A' %}
                                     {% set max_occupancy = 'N/A' %}
-                                    {% if zone.verticalization %}
-                                        {% set vertical_name = zone.verticalization.vertical_name %}
-                                        {% set max_occupancy = zone.verticalization.max_occupation %}
+                                    {% if zone.vertical_name %}
+                                        {% set vertical_name = zone.vertical_name %}
+                                    {% endif %}
+                                    {% if zone.max_occupation >= 0 %}
+                                        {% set max_occupancy = zone.max_occupation %}
                                     {% endif %}
                                     <td>{{vertical_name}}</td>
                                     <td>{{max_occupancy}}</td>

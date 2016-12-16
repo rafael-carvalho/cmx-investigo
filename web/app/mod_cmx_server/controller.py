@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, url_for, redirect, Respon
 from app import app
 from app.database import db_session
 from app import get_api_cmx
-from app.models import CMXServer, Campus, Building, Floor, Zone, CMXSystem, Verticalization
+from app.models import CMXServer, Campus, Building, Floor, Zone, CMXSystem
 
 mod_cmx_server = Blueprint('mod_cmx_server', __name__, url_prefix='/cmx_server')
 
@@ -98,6 +98,8 @@ def edit(server_id):
     return output
 
 
+
+
 @mod_cmx_server.route('/verticalization/add/<server_id>', methods=['POST'])
 def verticalization_add(server_id):
     output = {
@@ -106,28 +108,77 @@ def verticalization_add(server_id):
         'redirect_url': None,
     }
     try:
-
-        #print(json.dumps(request.json, indent=2))
-        db_session.query(Verticalization).delete()
-
         form_json = request.json
-        zones = db_session.query(Zone).all()
-        for zone in zones:
-            key_occupancy = '{}_occupancy'.format(zone.id)
-            key_vertical = '{}_vertical'.format(zone.id)
-            if key_occupancy in form_json and key_vertical in form_json:
-                vertical_name = form_json[key_vertical]
-                max_occupation = form_json[key_occupancy]
-                verticalization = Verticalization(vertical_name, max_occupation, zone.id)
-                db_session.add(verticalization)
-            else:
-                raise Exception('Missing information for {}'.format(zone.name))
+
+        vertical = None
+        language = None
+
+        vertical = form_json['vertical']
+        if vertical.lower() not in ["healthcare", 'retail']:
+            vertical = None
+
+        language = form_json['language']
+        if language.lower() not in ["english", 'portuguese']:
+            language = None
+
+        if not vertical:
+            vertical = 'Retail'
+
+        if not language:
+            language = 'English'
+
+
+        json_vertical_names_file = os.path.join(app.static_folder, 'server_config/verticalization.json')
+
+        with open(json_vertical_names_file) as data_file:
+            verticals = json.load(data_file)
+
+        vertical_names = None
+        for v in verticals:
+            if v['vertical'].lower() == vertical.lower():
+                items = v['items']
+                for item in items:
+                    if language.lower() == item['language'].lower():
+                        vertical_names = item['vertical_names']
+                        break
+
+        cmx_system = db_session.query(CMXSystem).filter(CMXSystem.id == server_id).first()
+        campi = cmx_system.campuses
+        counter_campus = 0
+        counter_floor = 0
+        counter_building = 0
+        counter_zone = 0
+        campi_names = vertical_names['campi']
+        buildings_names = vertical_names['buildings']
+        floors_names = vertical_names['floors']
+        zones_names = vertical_names['zones']
+
+        for campus in campi:
+            campus.vertical_name = campi_names[counter_campus % len(campi_names)]
+            counter_campus += 1
+            for building in campus.buildings:
+                building.vertical_name = buildings_names[counter_building % len(buildings_names)]
+                counter_building += 1
+                for floor in building.floors:
+                    floor.vertical_name = floors_names[counter_floor % len(floors_names)]
+                    counter_floor += 1
+                    for zone in floor.zones:
+                        zone.vertical_name = zones_names[counter_zone % len(zones_names)]
+                        counter_zone += 1
+                        key_occupancy = '{}_occupancy'.format(zone.id)
+                        if key_occupancy in form_json:
+                            max_occupation = form_json[key_occupancy]
+                            if max_occupation >= 0:
+                                zone.max_occupation = max_occupation
+                        else:
+                            raise Exception('Missing information for {}'.format(zone.name))
 
         db_session.commit()
         output['redirect_url'] = url_for('mod_cmx_server.details', server_id=server_id)
     except Exception as e:
         output['error'] = True
         output['error_message'] = str(e)
+        traceback.print_exc()
         db_session.rollback()
 
     output = Response(json.dumps(output), mimetype='application/json')
@@ -271,8 +322,24 @@ def validate_cmx_server(cmx_server):
                                         counter_zones += 1
                                         name = z["name"]
                                         zone_type = z["zoneType"]
-                                        db_zone = Zone(db_floor.aes_uid, name, zone_type)
+                                        coordinates = z["zoneCoordinate"]
+                                        zone_xs = []
+                                        zone_ys = []
+                                        zone_zs = []
+                                        for coordinate in coordinates:
+                                            zone_xs.append(coordinate["x"])
+                                            zone_ys.append(coordinate["y"])
+                                            zone_zs.append(coordinate["z"])
+
+                                        zone_center_x = sum(zone_xs) / len(zone_xs)
+                                        zone_center_y = sum(zone_ys) / len(zone_ys)
+                                        zone_center_z = sum(zone_zs) / len(zone_zs)
+                                        db_zone = Zone(db_floor.aes_uid, name, zone_type, zone_center_x, zone_center_y, zone_center_z)
                                         db_session.add(db_zone)
+
+
+
+
                 print ("{} has {} buildings, {} floors, {} zones".format(db_campus.name, counter_buildings, counter_floors,
                                                                   counter_zones))
 
@@ -284,4 +351,37 @@ def validate_cmx_server(cmx_server):
     else:
         output = False
 
+    return output
+
+
+
+@mod_cmx_server.route('/verticalization/remove/<server_id>', methods=['POST'])
+def verticalization_remove(server_id):
+    output = {
+        'error': None,
+        'error_message': None,
+        'redirect_url': None,
+    }
+    try:
+        form_json = request.json
+        cmx_system = db_session.query(CMXSystem).filter(CMXSystem.id == server_id).first()
+        campi = cmx_system.campuses
+        for campus in campi:
+            campus.vertical_name = None
+            for building in campus.buildings:
+                building.vertical_name = None
+                for floor in building.floors:
+                    floor.vertical_name = None
+                    for zone in floor.zones:
+                        zone.vertical_name = None
+                        zone.max_occupation = -1
+        db_session.commit()
+        output['redirect_url'] = url_for('mod_cmx_server.details', server_id=server_id)
+    except Exception as e:
+        output['error'] = True
+        output['error_message'] = str(e)
+        traceback.print_exc()
+        db_session.rollback()
+
+    output = Response(json.dumps(output), mimetype='application/json')
     return output

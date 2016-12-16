@@ -8,6 +8,7 @@ from datetime import datetime
 from requests.auth import HTTPBasicAuth
 import xmltodict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import json
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class APICaller(object):
@@ -39,7 +40,9 @@ class APICaller(object):
         if response.status_code == 200:
             self.log ("Success")
         elif response.status_code == 201:
-            self.log ("Created")    
+            self.log ("Created")
+        elif response.status_code == 204:
+            self.log ("No content")
         elif response.status_code == 302:
             raise Exception("Incorrect credentials provided")
         elif response.status_code == 400:
@@ -83,7 +86,11 @@ class APICaller(object):
     
     def requestHTTPJSON(self, url, method, headers=None, payload=None, verify=True, timeout=None):
         httpResponse = self.requestHTTP(url, method, headers, payload, verify, timeout=timeout)
-        response_json = httpResponse.json() # Get the json-encoded content from response with "response_json = resp.json()
+        if httpResponse.status_code == 204:
+            # 204 means No content
+            response_json = {}
+        else:
+            response_json = httpResponse.json() # Get the json-encoded content from response with "response_json = resp.json()
         #self.logWithCiscoAppName (json.dumps(response_json,indent=2))
         return response_json
     

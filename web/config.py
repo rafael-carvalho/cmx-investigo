@@ -11,6 +11,7 @@ class Config(object):
     TROPO_API_KEY_VOICE = os.environ.get('TROPO_API_KEY_VOICE', "VOICE TOKEN NOT PROVIDED")
     SPARK_TOKEN = os.environ.get('SPARK_TOKEN', "TOKEN-NOT-PROVIDED")
     ON_CISCO_NETWORK = os.environ.get('ON_CISCO_NETWORK', False)
+    NOTIFICATION_SMS_PHONE_NUMBER = os.environ.get('NOTIFICATION_SMS_PHONE_NUMBER', False)
 
     # Application threads. A common general assumption is
     # using 2 per available processor cores - to handle

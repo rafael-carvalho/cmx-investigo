@@ -18,7 +18,6 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 
 
 def get_api_cmx(cmx_server=None):
-
     if not cmx_server:
         cmx_server = get_controller()
 
@@ -26,12 +25,15 @@ def get_api_cmx(cmx_server=None):
 
 
 def get_api_spark():
-    return CiscoSparkAPI(access_token='OWQzZGE4YTItNDZkMC00MTVkLTk4NzMtNzBkY2RmNDI4MDllZThkYTIyNzItMzI5')
+    return CiscoSparkAPI(access_token=app.config['SPARK_TOKEN'])
 
 
 def get_api_tropo():
-    return TropoAPICaller('5679686d634d44495a486f6d56684a48645564716c454f63554c4d726f4876526d7664626e6d68664972436c', '55644447634365724c6b525461476265764b466457426d557954477a76666c4c4f6b654952577250787a515a')
+    return TropoAPICaller(app.config['TROPO_API_KEY_VOICE'], app.config['TROPO_API_KEY_TEXT'])
 
+
+def get_notification_sms_phone_number():
+    return app.config['NOTIFICATION_SMS_PHONE_NUMBER']
 
 
 def get_controller():

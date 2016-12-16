@@ -285,7 +285,11 @@ $(document).ready(function() {
                 <div class="building w3-container">
                     {% for floor in building.floors %}
                         <div class="floor w3-container">
-                            <h3>{{floor.name}}</h3>
+                            {% if floor.vertical_name %}
+                                 <h3>{{floor.vertical_name}}</h3>
+                            {% else %}
+                                <h3>{{floor.vertical_name}}</h3>
+                            {% endif %}
                             {% for zone in floor.zones %}
                                 {% set id = campus.name~'_'~building.name~'_'~floor.name~'_'~zone.name %}
                                 {% set id = id | replace ('!', '') %}

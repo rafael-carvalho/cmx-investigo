@@ -43,7 +43,6 @@ var verticals_json;
 
 $.getJSON("{{url_for('static', filename='server_config/verticalization.json')}}", function(json){
     verticals_json = json;
-
 });
 
 function getVerticalsValues(vertical, language) {
@@ -55,7 +54,7 @@ function getVerticalsValues(vertical, language) {
             for (var j = 0; j < items.length; j++) {
                 var item = items[j];
                 if (item.language.toLowerCase() === language.toLowerCase()) {
-                    output = item.vertical_names;
+                    output = item.vertical_names.zones;
                     break;
                 }
             }
@@ -74,6 +73,10 @@ function getVerticalsValues(vertical, language) {
         if (form_id == 'pre_defined_form') {
             var vertical = $("#predefined_vertical").val()
             var language = $("#predefined_language").val()
+
+            $("#language").val(language);
+            $("#vertical").val(vertical);
+
             var vertical_names = getVerticalsValues(vertical, language);
             var i = 0;
             $('.vertical_name').each(function( index, value ) {
@@ -87,12 +90,15 @@ function getVerticalsValues(vertical, language) {
             });
         } else  {
          var url = null;
-         if (form_id == 'server_info') {
+         if (form_id == 'remove_verticalization') {
+            url = '{{url_for("mod_cmx_server.verticalization_remove", server_id = object.id)}}';
+         } else if (form_id == 'server_info') {
             url = '{{url_for('mod_cmx_server.add')}}';
          } else if (form_id == 'verticalization_form') {
             url = 'none';
             url = '{{url_for("mod_cmx_server.verticalization_add", server_id = object.id)}}';
         }
+
         $.ajax({
             type: 'POST',
             url: url,
@@ -191,7 +197,7 @@ function getVerticalsValues(vertical, language) {
             <table>
                 <thead style="text-align:center; font-weight: bold;">
                     <td>Zone name</td>
-                    <td>Vertical name</td>
+                    <!-- <td>Vertical name</td> -->
                     <td>Max Occupancy</td>
                 </thead>
 
@@ -203,13 +209,9 @@ function getVerticalsValues(vertical, language) {
                             {% set id = zone.id %}
                             <tr style="text-align:right;">
                                 <td style="text-align:right;">{{zone.name}}</td>
-                                {% set vertical_name = '' %}
-                                {% set max_occupancy = '' %}
-                                {% if zone.verticalization %}
-                                    {% set vertical_name = zone.verticalization.vertical_name %}
-                                    {% set max_occupancy = zone.verticalization.max_occupation %}
-                                {% endif %}
-                                <td><input name="{{id}}_vertical" type="text" value="{{vertical_name}}" class="vertical_name"/> </td>
+                                {% set vertical_name = zone.vertical_name %}
+                                {% set max_occupancy = zone.max_occupation %}
+                                <td>{{vertical_name}}</td>
                                 <td><input name="{{id}}_occupancy" type="text" value="{{max_occupancy}}" class="occupancy" /> </td>
                             </tr>
                         {% endfor %}
@@ -217,8 +219,17 @@ function getVerticalsValues(vertical, language) {
                 {% endfor %}
             {% endfor %}
             </table>
+            <input name="vertical" id="vertical" type="hidden" />
+            <input name="language" id="language" type="hidden" />
+
             <input type="submit"/></td>
         </form>
     </div>
+    <hr style="border-top: 1px dashed #8c8b8b;">
+    <form id="remove_verticalization">
+        <h3>Remove verticalization?</h3>
+        <input type="submit"/></td>
+    </form>
+
 </div>
 {% endblock %}
