@@ -12,6 +12,7 @@ class Config(object):
     SPARK_TOKEN = os.environ.get('SPARK_TOKEN', "TOKEN-NOT-PROVIDED")
     ON_CISCO_NETWORK = os.environ.get('ON_CISCO_NETWORK', False)
     NOTIFICATION_SMS_PHONE_NUMBER = os.environ.get('NOTIFICATION_SMS_PHONE_NUMBER', False)
+    SPARK_DEFAULT_ROOM_ID = os.environ.get('SPARK_DEFAULT_ROOM_ID', False)
 
     # Application threads. A common general assumption is
     # using 2 per available processor cores - to handle

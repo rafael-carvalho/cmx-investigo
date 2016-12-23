@@ -36,6 +36,12 @@ def get_notification_sms_phone_number():
     return app.config['NOTIFICATION_SMS_PHONE_NUMBER']
 
 
+def get_default_room_id():
+    return app.config['SPARK_DEFAULT_ROOM_ID']
+
+
+
+
 def get_controller():
     from app.models import CMXServer
     db_controller = db_session.query(CMXServer).filter(CMXServer.active).first()

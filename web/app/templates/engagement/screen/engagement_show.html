@@ -285,7 +285,11 @@ $(document).ready(function() {
     </form>
 </div>
 <div class="w3-header">
-    <h3>Welcome to {{hierarchy}}</h3>
+    {% if vertical_hierarchy %}
+        <h3>Welcome to {{vertical_hierarchy}}</h3>
+    {% else %}
+        <h3>Welcome to {{hierarchy}}</h3>
+    {% endif %}
 </div>
 <div id="show-when-absent" class="w3-container">
     <h3>Idle Screen</h3>

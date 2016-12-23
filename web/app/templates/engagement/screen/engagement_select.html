@@ -2,22 +2,6 @@
 {% block title %}Engage{% endblock %}
 {% block style %}{% endblock %}
 {% block scripts %}
-<script type="text/javascript" charset="utf-8">
-function updateScreen() {
-  $.ajax({
-   type: "GET",
-   url: "{{url_for('mod_api.overview')}}",
-   data: "user=success",
-   success: function(msg){
-     //$(msg).appendTo("#edix");
-     //alert(msg)
-     //console.log(msg)
-   }
- });
-}
-
-</script>
-
 {% endblock %}
 {% block subsection_title %}Select Engagement Screen{% endblock %}
 {% block content %}
@@ -29,13 +13,20 @@ function updateScreen() {
             <td>Hierarchy</td>
             <td>
                 <select name="hierarchy">
-                        {% for h in floors %}
+                    {% for h in floors %}
+                        {% if h.vertical_name %}
+                            <option value="" disabled>{{ h.vertical_name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.get_hierarchy() }}">>> {{ z.vertical_name }}</option>
+                                {% endfor %}
+                        {%else%}
                             <option value="" disabled>{{ h.name }}</option>
                                 {% for z in h.zones %}
                                 <option value="{{ z.get_hierarchy() }}">>> {{ z.name }}</option>
                                 {% endfor %}
-                        {% endfor %}
-                    </select>
+                        {% endif %}
+                    {% endfor %}
+                </select>
             </td>
         </tr>
         <tr>

@@ -8,7 +8,7 @@ from app import app
 from app import get_api_spark, get_api_tropo, get_notification_sms_phone_number
 from app.database import db_session
 from app.mod_user.models import RegisteredUser
-from app.mod_api.controller import get_device_location
+from app.mod_api.controller import get_device_location, get_devices_divided_by_hierarchy
 import plotly.plotly as py
 import plotly.graph_objs as go
 import math
@@ -75,9 +75,40 @@ def command_list(message):
             post_markdown += '{}. {} ({})\n'.format(len(user_names), user.name, user.mac_address)
 
         post_text += ' {}'.format(user_names)
+    elif second_word in ['device', 'devices']:
+
+        overview = get_devices_divided_by_hierarchy()
+        """
+
+        post_text = '{} items were found:'.format(len(users))
+        post_markdown = "# {}\n".format(post_text)
+
+        user_names = []
+        for user in users:
+            user_names.append(user.name)
+            post_markdown += '{}. {} ({})\n'.format(len(user_names), user.name, user.mac_address)
+
+        post_text += ' {}'.format(user_names)
+        """
+
+        count = 0
+
+        for hierarchy in overview:
+            count += len(hierarchy["unknown_devices"])
+
+        # this line below takes the first device of each hierarchy and adds to the list
+        devices = [item["unknown_devices"][0]['mac_address'] for item in overview]
+
+        post_text = "{} unknown devices and were found. Here's a sample:".format(count)
+        post_markdown = "# {}\n".format(post_text)
+
+        for i in range(len(devices)):
+            post_markdown += '{}. {}\n'.format(i, devices[i])
+
+        post_text += ' {}'.format(devices)
 
     else:
-        post_text = 'List command not valid'
+        post_text = 'Invalid list command. Try list users/assets or list devices'
 
     write_to_spark(message.roomId, None, None, post_text, post_markdown, None)
 
@@ -278,7 +309,7 @@ def parse_user_input(req):
           "personId": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS82NmVjMDkyNi0zOTUxLTRkMDUtYWRlMC00YWIxOGZmMzQwZGE",
           "text": req.args["message"],
           "personEmail": "rafacarv@cisco.com",
-          "roomId": "Y2lzY29zcGFyazovL3VzL1JPT00vMjQ2YTI5OGQtNTgyOS0zY2JlLTk3NmQtYjUyOWRiZDgwZjg5",
+          "roomId": "Y2lzY29zcGFyazovL3VzL1JPT00vZGFkYWIwZDAtZWEzMS0zNzU3LWJhOWQtNjMxZTVkOTc2YmU2",
           "id": "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvZTRjY2JhNzAtYjhlNi0xMWU2LTkxNTktN2Q4NWUzOWFjYTc0"
         }
         output = Message(fake_json)

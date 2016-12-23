@@ -59,15 +59,22 @@ $(document).ready(function(){
             <tr>
                 <td class="form-field-name">Hierarchy:</td>
                 <td>
-                    <select name="zone">
-                        {% for h in floors %}
+                <select id="zone" name="zone">
+                    {% for h in floors %}
+                        {% if h.vertical_name %}
+                            <option value="" disabled>{{ h.vertical_name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.id }}">>> {{ z.vertical_name }}</option>
+                                {% endfor %}
+                        {%else%}
                             <option value="" disabled>{{ h.name }}</option>
                                 {% for z in h.zones %}
                                 <option value="{{ z.id }}">>> {{ z.name }}</option>
                                 {% endfor %}
-                        {% endfor %}
-                    </select>
-                </td>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </td>
             </tr>
             <tr>
                 <td class="form-field-name">User:</td>
@@ -105,7 +112,7 @@ $(document).ready(function(){
                 <tr>
                     <td class="form-field-name">Spark Room Id</td>
                     <td>
-                        <input class='fill_rest' type="text" name="spark_target" value="Y2lzY29zcGFyazovL3VzL1JPT00vMjQ2YTI5OGQtNTgyOS0zY2JlLTk3NmQtYjUyOWRiZDgwZjg5"/>
+                        <input class='fill_rest' type="text" name="spark_target" value="{{default_room_id}}"/>
                     </td>
                 </tr>
                 <tr>

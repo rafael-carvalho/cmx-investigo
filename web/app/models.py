@@ -99,6 +99,9 @@ class Campus(Base):
     def get_hierarchy(self):
         return self.name
 
+    def get_vertical_hierarchy(self):
+        return self.vertical_name
+
     def serialize(self):
         buildings = []
         for b in self.buildings:
@@ -139,6 +142,9 @@ class Building(Base):
 
     def get_hierarchy(self):
         return "{}>{}".format(self.campus.get_hierarchy(), self.name)
+
+    def get_vertical_hierarchy(self):
+        return "{}>{}".format(self.campus.get_vertical_hierarchy(), self.vertical_name)
 
     def serialize(self):
         floors = []
@@ -221,6 +227,9 @@ class Floor(Base):
     def get_hierarchy(self):
         return "{}>{}".format(self.building.get_hierarchy(), self.name)
 
+    def get_vertical_hierarchy(self):
+        return "{}>{}".format(self.building.get_vertical_hierarchy(), self.vertical_name)
+
     def serialize(self):
         zones = []
         for z in self.zones:
@@ -277,6 +286,9 @@ class Zone(Base):
 
     def get_hierarchy(self):
         return "{}>{}".format(self.floor.get_hierarchy(), self.name)
+
+    def get_vertical_hierarchy(self):
+        return "{}>{}".format(self.floor.get_vertical_hierarchy(), self.vertical_name)
 
     def serialize(self):
         item = {

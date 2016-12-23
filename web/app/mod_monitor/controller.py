@@ -2,8 +2,10 @@ import traceback
 import json
 from flask import Blueprint, render_template, redirect, request, url_for
 
+from app.database import db_session
 from app.mod_api import controller as api_module
 from app import get_controller
+from app.models import Floor
 
 mod_monitor = Blueprint('mod_monitor', __name__, url_prefix='/monitor')
 
@@ -49,10 +51,8 @@ def device_show(mac=None):
 @mod_monitor.route('/hierarchy/select', methods=['GET', 'POST'])
 def hierarchy_select():
     if request.method == 'GET':
-        ctrl = get_controller()
-        data = ctrl.get_hierarchies_serialized()
-        #print(json.dumps(data, indent=2))
-        output = render_template('monitor/select/hierarchy_select.html', data=data)
+        floors = db_session.query(Floor).all()
+        output = render_template('monitor/select/hierarchy_select.html', floors=floors)
     else:
         hierarchy = request.form["hierarchy"]
         url = url_for('.hierarchy_show', hierarchy=hierarchy)

@@ -282,13 +282,18 @@ $(document).ready(function() {
     {% for campus in data %}
         <div class="campus w3-container">
             {% for building in campus.buildings %}
+                {% if building.vertical_name %}
+                     <h3>{{building.vertical_name}}</h3>
+                {% else %}
+                    <h3>{{building.name}}</h3>
+                {% endif %}
                 <div class="building w3-container">
                     {% for floor in building.floors %}
                         <div class="floor w3-container">
                             {% if floor.vertical_name %}
                                  <h3>{{floor.vertical_name}}</h3>
                             {% else %}
-                                <h3>{{floor.vertical_name}}</h3>
+                                <h3>{{floor.name}}</h3>
                             {% endif %}
                             {% for zone in floor.zones %}
                                 {% set id = campus.name~'_'~building.name~'_'~floor.name~'_'~zone.name %}
@@ -298,9 +303,9 @@ $(document).ready(function() {
                                     <div>
                                         {% set vertical_name = 'N/A' %}
                                         {% set max_occupancy = 'N/A' %}
-                                        {% if zone.verticalization %}
-                                            {% set vertical_name = zone.verticalization.vertical_name %}
-                                            {% set max_occupancy = zone.verticalization.max_occupation %}
+                                        {% if zone.vertical_name %}
+                                            {% set vertical_name = zone.vertical_name %}
+                                            {% set max_occupancy = zone.max_occupation %}
                                             <h4 class="zone_name">{{vertical_name}}</h4>
                                         {% else %}
                                             <h4 class="zone_name">{{zone.name}}</h4>

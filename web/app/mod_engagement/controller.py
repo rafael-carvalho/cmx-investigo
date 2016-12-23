@@ -1,12 +1,22 @@
 import json
 import traceback
-
+import cgi
 from flask import Blueprint, render_template, request, Response, url_for, redirect
 
-from app import get_api_spark, get_api_tropo
+from app import get_api_spark, get_api_tropo, get_default_room_id, get_notification_sms_phone_number
 from app.database import db_session
 from app.mod_user.models import RegisteredUser
 from app.models import Floor, EngagementTrigger, Zone
+try:
+    from html import unescape  # python 3.4+
+except ImportError:
+    try:
+        from html.parser import HTMLParser  # python 3.x (<3.4)
+    except ImportError:
+        from HTMLParser import HTMLParser  # python 2.x
+    unescape = HTMLParser().unescape
+
+
 
 mod_engagement = Blueprint('mod_engagement', __name__, url_prefix='/engagement')
 
@@ -34,7 +44,33 @@ def engagement_screen_show(hierarchy):
     triggers = []
     for t in get_engagement_triggers_per_zone(zone.id):
         triggers.append(t.serialize())
-    output = render_template("engagement/screen/engagement_show.html", hierarchy=hierarchy, triggers=triggers)
+
+    vertical_hierarchy = None
+    if zone.vertical_name:
+        vertical_hierarchy = zone.get_vertical_hierarchy()
+
+    output = render_template("engagement/screen/engagement_show.html", hierarchy=hierarchy, triggers=triggers, vertical_hierarchy=vertical_hierarchy)
+    return output
+
+@mod_engagement.route('/screen_dwell/select', methods=['GET', 'POST'])
+def engagement_screen_dwell_select():
+    if request.method == 'GET':
+        floors = db_session.query(Floor).all()
+        output = render_template("engagement/screen/engagement_select.html", floors=floors)
+    else:
+        output = redirect(url_for('.engagement_screen_dwell_show', hierarchy=request.form['hierarchy']))
+    return output
+
+@mod_engagement.route('/screen_dwell/<hierarchy>', methods=['GET'])
+def engagement_screen_dwell_show(hierarchy):
+    zone_name = hierarchy.split('>')[-1]
+    zone = db_session.query(Zone).filter(Zone.name == zone_name).first()
+
+    vertical_hierarchy = None
+    if zone.vertical_name:
+        vertical_hierarchy = zone.get_vertical_hierarchy()
+
+    output = render_template("engagement/screen/engagement_show_dwell.html", hierarchy=hierarchy, vertical_hierarchy=vertical_hierarchy)
     return output
 
 
@@ -48,7 +84,7 @@ def engagement_trigger_list():
 def engagement_trigger_add():
     floors = db_session.query(Floor).all()
     users = db_session.query(RegisteredUser).all()
-    output = render_template("engagement/trigger/trigger_add.html", users=users, floors=floors)
+    output = render_template("engagement/trigger/trigger_add.html", users=users, floors=floors, default_room_id=get_default_room_id())
     return output
 
 
@@ -179,6 +215,49 @@ def fire_user_zone_trigger():
     return Response(json.dumps(output), mimetype='application/json')
 
 
+
+@mod_engagement.route('/trigger_dwell', methods=['POST'])
+def fire_exceeded_dwell_time():
+    error = True
+    error_message = 'Unknown error'
+    message = None
+    try:
+        if request.json:
+            user = db_session.query(RegisteredUser).filter(RegisteredUser.id == request.json['user_id']).first()
+            hierarchy = request.json['hierarchy']
+            hierarchy_vertical_name = request.json['hierarchy_vertical_name']
+            if user:
+                h = hierarchy
+                if hierarchy_vertical_name:
+                    h = hierarchy_vertical_name
+
+                h = unescape(h)
+
+                spark_message = 'Employee {} has stayed for too long at {}'.format(user.name, h)
+                get_api_spark().messages.create(get_default_room_id(), text=spark_message)
+
+                if user.phone:
+                    tropo_message = 'Please leave {}'.format(h)
+                    get_api_tropo().triggerTropoWithMessageAndNumber(tropo_message, user.phone, type='text')
+
+                error = False
+                error_message = None
+                message = 'Triggers for {}. OK'.format(user.name)
+            else:
+                error = True
+                error_message = 'User not found'
+
+    except Exception as e:
+        traceback.print_exc()
+    finally:
+        output = {
+            'error': error,
+            'error_message': error_message,
+            'message': message,
+        }
+    return Response(json.dumps(output), mimetype='application/json')
+
+
 def replace_user_info_on_trigger_text(text, user):
     text = text.replace('{user.name}', str(user.name))
     text = text.replace('{user.phone}', str(user.phone))
@@ -187,9 +266,18 @@ def replace_user_info_on_trigger_text(text, user):
 
 
 def replace_zone_information(text, zone):
-    text = text.replace('{zone.name}', str(zone.verticalization.vertical_name))
+
+    zone_name = zone.name
+    if zone.vertical_name:
+        zone_name = zone.vertical_name
+
+    floor_name = zone.floor.name
+    if zone.floor.vertical_name:
+        floor_name = zone.floor.vertical_name
+
+    text = text.replace('{zone.name}', zone_name)
     text = text.replace('{zone.id}', str(zone.id))
-    text = text.replace('{zone.floor}', str(zone.floor.name))
+    text = text.replace('{zone.floor}', floor_name)
     return text
 
 

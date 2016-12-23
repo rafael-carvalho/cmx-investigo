@@ -14,15 +14,18 @@
             <td>Hierarchy</td>
             <td>
                  <select name="hierarchy">
-                     {% for campus in data %}
-                         {% for b in campus.buildings %}
-                            {% for f in b.floors %}
-                                <option value="{{campus.name}}>{{b.name}}>{{f.name}}">{{ f.name }}</option>
-                                {% for z in f.zones %}
-                                    <option value="{{campus.name}}>{{b.name}}>{{f.name}}>{{z.name}}">>>{{ z.name }}</option>
+                    {% for h in floors %}
+                        {% if h.vertical_name %}
+                            <option value="" disabled>{{ h.vertical_name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.get_hierarchy() }}">>> {{ z.vertical_name }}</option>
                                 {% endfor %}
-                            {% endfor %}
-                         {% endfor %}
+                        {%else%}
+                            <option value="" disabled>{{ h.name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.get_hierarchy() }}">>> {{ z.name }}</option>
+                                {% endfor %}
+                        {% endif %}
                     {% endfor %}
                 </select>
             </td>

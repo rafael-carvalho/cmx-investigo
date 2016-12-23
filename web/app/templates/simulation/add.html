@@ -8,6 +8,7 @@
 $(document).ready(function(){
     $("form").submit(function( event ) {
         event.preventDefault();
+
         var hierarchy = $("#hierarchy").val();
         var coord_x = $("#coord_x").val();
         var coord_y = $("#coord_y").val();
@@ -21,6 +22,7 @@ $(document).ready(function(){
         if (!mac){
             mac =  $("#mac_address_user").val();
         }
+        console.log(hierarchy);
         if (mac && hierarchy && coord_x && coord_y){
             notification = {}
             notification["deviceId"] = mac;
@@ -67,12 +69,19 @@ $(document).ready(function(){
         <tr>
             <td>Hierarchy</td>
             <td>
-                <select id="hierarchy">
+                <select id="hierarchy" name="hierarchy">
                     {% for h in floors %}
-                    <option value="{{ h.get_hierarchy() }}">{{ h.name }}</option>
-                    {% for z in h.zones %}
-                    <option value="{{ z.get_hierarchy() }}">>> {{ z.name }}</option>
-                    {% endfor %}
+                        {% if h.vertical_name %}
+                            <option value="" disabled>{{ h.vertical_name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.get_hierarchy() }}">>> {{ z.vertical_name }}</option>
+                                {% endfor %}
+                        {%else%}
+                            <option value="" disabled>{{ h.name }}</option>
+                                {% for z in h.zones %}
+                                <option value="{{ z.get_hierarchy() }}">>> {{ z.name }}</option>
+                                {% endfor %}
+                        {% endif %}
                     {% endfor %}
                 </select>
             </td>
