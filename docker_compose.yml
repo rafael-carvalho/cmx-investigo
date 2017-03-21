@@ -1,0 +1,46 @@
+web:
+  container_name: "cmx-finder-web"
+  restart: always
+  build: ./web
+  expose:
+    - "8000"
+  links:
+    - postgres:postgres
+  volumes:
+    - /usr/src/app/static
+  #env_file: .env
+  command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
+  environment:
+    - SECRET_KEY= b9gSjNgPyl6WLGdTrV0j
+    - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
+    - APP_SETTINGS=config.DevelopmentConfig
+    - TROPO_API_KEY_TEXT=PUT YOURS
+    - TROPO_API_KEY_VOICE=PUT YOURS
+    - SPARK_TOKEN=PUT YOURS
+    - ON_CISCO_NETWORK=True
+
+nginx:
+  container_name: "cmx-finder-nginx"
+  restart: always
+  build: ./nginx/
+  ports:
+    - "80:80"
+  volumes:
+    - /www/static
+  volumes_from:
+    - web
+  labels:
+    io.rancher.sidekicks: web
+  links:
+    - web:web
+
+postgres:
+  container_name: "cmx-finder-db"
+  restart: always
+  image: postgres:latest
+# volumes_from:
+#    - data
+#  labels:
+#    io.rancher.sidekicks: data
+  ports:
+    - "2345:5432"
